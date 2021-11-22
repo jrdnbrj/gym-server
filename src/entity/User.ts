@@ -2,7 +2,6 @@ import {Entity, ObjectIdColumn, ObjectID, Column} from "typeorm";
 
 @Entity()
 export class User {
-
     @ObjectIdColumn()
     id: ObjectID;
 
@@ -14,5 +13,4 @@ export class User {
 
     @Column()
     age: number;
-
 }
