@@ -1,9 +1,9 @@
 import {ConnectionOptions} from "typeorm";
-import {MONGO_URL} from "./src/constants";
+import {DATABASE_URL} from "./src/constants";
 
 const connectionOptions: ConnectionOptions = {
-    type: "mongodb",
-    url: MONGO_URL,
+    type: "postgres",
+    url: DATABASE_URL,
     synchronize: true,
     logging: false,
     entities: [
@@ -20,7 +20,13 @@ const connectionOptions: ConnectionOptions = {
         "migrationsDir": "src/migration",
         "subscribersDir": "src/subscriber"
     },
-    useUnifiedTopology: true,
+    ssl: true, // For Heroku Postgres: https://github.com/typeorm/typeorm/issues/278
+    // https://devcenter.heroku.com/articles/heroku-postgresql#connecting-in-node-js
+    extra: {
+        ssl: {
+            rejectUnauthorized: false, // For Heroku Postgres
+        }
+    }
 }
 
 export default connectionOptions;

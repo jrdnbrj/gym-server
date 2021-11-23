@@ -5,4 +5,4 @@ if (__debug__) {
     require("dotenv").config();
 }
 
-export const MONGO_URL = process.env.MONGO_URL;
+export const DATABASE_URL = process.env.DATABASE_URL;
