@@ -1,11 +1,11 @@
 .idea/
 .vscode/
+.vim
 node_modules/
 build/
 tmp/
 temp/
 
-# create by https://github.com/iamcco/coc-gitignore (Mon Nov 22 2021 16:32:49 GMT-0500 (Ecuador Time))
 # Node.gitignore:
 # Logs
 logs

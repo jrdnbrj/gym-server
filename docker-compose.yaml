@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+    server:
+        build: .
+        volumes:
+            - .:/usr/src/app
+            - node-modules:/usr/src/app/node_modules
+        ports:
+            - 8000:8000
+            - 9229:9229
+        command: yarn dev
+volumes:
+    node-modules:
