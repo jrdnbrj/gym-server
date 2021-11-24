@@ -1,11 +1,16 @@
 import "reflect-metadata";
-import {createConnection} from "typeorm";
+import { createConnection } from "typeorm";
 import connectionOptions from "../ormconfig";
-import {ApolloServer} from "apollo-server-express";
-import {buildSchema} from "type-graphql"
+import { ApolloServer } from "apollo-server-express";
+import { buildSchema } from "type-graphql";
 import * as express from "express";
-import {ApolloServerPluginLandingPageGraphQLPlayground, ApolloServerPluginLandingPageDisabled} from "apollo-server-core";
-import {__prod__} from "./constants";
+import {
+    ApolloServerPluginLandingPageGraphQLPlayground,
+    ApolloServerPluginLandingPageDisabled,
+} from "apollo-server-core";
+import { __prod__, SESSION_SECRET } from "./constants";
+import * as session from "express-session";
+import cookieParser = require("cookie-parser");
 
 const main = async () => {
     await createConnection(connectionOptions);
@@ -14,11 +19,9 @@ const main = async () => {
     const app = express();
     const PORT = 8000;
 
-    const schema = await buildSchema(
-        {
-            resolvers: [__dirname + "/resolver/**/*.ts"]
-        }
-    );
+    const schema = await buildSchema({
+        resolvers: [__dirname + "/resolver/**/*.ts"],
+    });
 
     const apolloServer = new ApolloServer({
         schema,
@@ -26,13 +29,31 @@ const main = async () => {
             __prod__
                 ? ApolloServerPluginLandingPageDisabled()
                 : ApolloServerPluginLandingPageGraphQLPlayground(),
-        ]
+        ],
     });
 
     await apolloServer.start();
     apolloServer.applyMiddleware({
-        app
+        app,
     });
+
+    // Express middleware
+    app.use(cookieParser());
+
+    const oneDayMs = 1000 * 60 * 60 * 24;
+    app.use(
+        session({
+            secret: SESSION_SECRET,
+            resave: false,
+            saveUninitialized: false,
+            cookie: {
+                maxAge: oneDayMs,
+                secure: __prod__,
+                httpOnly: __prod__,
+                sameSite: "lax",
+            },
+        })
+    );
 
     // Endpoints
     app.get("/", (_req, res) => {
@@ -42,7 +63,7 @@ const main = async () => {
     // Listen
     app.listen(PORT, () => {
         console.log(`⚡️[server]: Server listening on localhost:${PORT}`);
-    })
-}
+    });
+};
 
-main().catch(e => console.error(e));
+main().catch((e) => console.error(e));
