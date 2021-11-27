@@ -12,6 +12,8 @@
       "experimentalDecorators": true,
       "sourceMap": true,
 
-      "strict": true
+      "strict": true,
+      "noImplicitReturns": true,
+      "noImplicitAny": true
    }
 }

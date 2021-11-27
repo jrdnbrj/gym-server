@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import { createConnection } from "typeorm";
 import connectionOptions from "../ormconfig";
-import { ApolloServer } from "apollo-server-express";
+import { ApolloServer, ApolloServerExpressConfig } from "apollo-server-express";
 import { buildSchema } from "type-graphql";
 import * as express from "express";
 import {
@@ -11,6 +11,7 @@ import {
 import { __prod__, SESSION_SECRET } from "./constants";
 import * as session from "express-session";
 import cookieParser = require("cookie-parser");
+import { RegularContext } from "./types/RegularContext";
 
 const main = async () => {
     await createConnection(connectionOptions);
@@ -18,24 +19,6 @@ const main = async () => {
 
     const app = express();
     const PORT = 8000;
-
-    const schema = await buildSchema({
-        resolvers: [__dirname + "/resolver/**/*.ts"],
-    });
-
-    const apolloServer = new ApolloServer({
-        schema,
-        plugins: [
-            __prod__
-                ? ApolloServerPluginLandingPageDisabled()
-                : ApolloServerPluginLandingPageGraphQLPlayground(),
-        ],
-    });
-
-    await apolloServer.start();
-    apolloServer.applyMiddleware({
-        app,
-    });
 
     // Express middleware
     app.use(cookieParser());
@@ -54,6 +37,53 @@ const main = async () => {
             },
         })
     );
+
+    // Configure Apollo Server
+    const schema = await buildSchema({
+        resolvers: [__dirname + "/resolver/**/*.ts"],
+    });
+
+    // TODO: Find a more elegant  approach to passing apolloServerConfig, as
+    // new ApolloServer() seems to receive a config parameter of type any in
+    // Apollo 3.
+    const apolloServerConfig: ApolloServerExpressConfig = {
+        schema,
+        plugins: [
+            __prod__
+                ? ApolloServerPluginLandingPageDisabled()
+                : ApolloServerPluginLandingPageGraphQLPlayground({
+                      settings: {
+                          "request.credentials": "include",
+                      },
+                  }),
+        ],
+        context: ({ req, res }): RegularContext => ({
+            req,
+            res,
+        }),
+        cache: undefined,
+        debug: undefined,
+        logger: undefined,
+        dataSources: undefined,
+        formatError: undefined,
+        fieldResolver: undefined,
+        rootValue: undefined,
+        formatResponse: undefined,
+        validationRules: undefined,
+        executor: undefined,
+        allowBatchedHttpRequests: undefined,
+    };
+
+    const apolloServer = new ApolloServer(apolloServerConfig);
+
+    await apolloServer.start();
+    apolloServer.applyMiddleware({
+        app,
+        cors: {
+            credentials: true,
+            origin: "http://localhost:3000", // TODO: Client url as env variable.
+        },
+    });
 
     // Endpoints
     app.get("/", (_req, res) => {
