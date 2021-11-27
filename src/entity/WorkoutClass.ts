@@ -18,7 +18,7 @@ registerEnumType(Weekdays, {
 
 @ObjectType()
 @Entity()
-export class MonthlyClasses extends BaseEntity {
+export class WorkoutClass extends BaseEntity {
     @Field()
     @PrimaryGeneratedColumn()
     id!: number;
