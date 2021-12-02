@@ -1,25 +1,20 @@
 import { Resolver, Mutation, Query, Arg, Ctx } from "type-graphql";
-import { User, UserRole } from "../entity/User";
 import { ApolloError } from "apollo-server-core";
 import { verify } from "argon2";
 import { RegularContext } from "../types/RegularContext";
-import login from "../util/login";
-
-// TODO: Move type declaration to another file.
-declare module "express-session" {
-    interface SessionData {
-        userId: number;
-    }
-}
+import { login } from "../util/login";
+import { User } from "../entity/User";
+import { Client } from "../entity/Client";
+import { Instructor } from "../entity/Instructor";
 
 @Resolver()
 export class UserResolver {
     @Query(() => User, { nullable: true })
-    async userMe(@Ctx() { req }: RegularContext): Promise<User | null> {
+    async userMe(@Ctx() { req, db }: RegularContext): Promise<User | null> {
         const userId = req.session.userId;
         if (!userId) return null;
 
-        const user = await User.findOne(req.session.userId);
+        const user = await db.manager.findOne(User, userId);
 
         if (!user) return null;
         return user;
@@ -29,13 +24,13 @@ export class UserResolver {
     async userLogin(
         @Arg("email") email: string,
         @Arg("password") plainPassword: string,
-        @Ctx() { req }: RegularContext
+        @Ctx() { req, db }: RegularContext
     ): Promise<User> {
         const invalidEmailOrPasswordError = new ApolloError(
             "Email o contraseña inválida."
         );
 
-        const user = await User.findOne({ email });
+        const user = await db.manager.findOne(User, { email });
 
         // user does not exist.
         if (!user) {
@@ -44,6 +39,7 @@ export class UserResolver {
 
         // Invalid password.
         const isPasswordValid = await verify(user.getPassword(), plainPassword);
+
         if (!isPasswordValid) {
             throw invalidEmailOrPasswordError;
         }
@@ -67,35 +63,55 @@ export class UserResolver {
         return true;
     }
 
-    /**Creates a new User with a Client role.*/
+    /**Creates a new User with a User role.*/
     @Mutation(() => User)
     async userRegister(
         @Arg("firstName") firstName: string,
         @Arg("lastName") lastName: string,
         @Arg("email") email: string,
-        @Arg("password") password: string
+        @Arg("password") password: string,
+        @Arg("isClient") isClient: boolean,
+        @Arg("isInstructor") isInstructor: boolean,
+        @Ctx()
+        { db }: RegularContext
     ): Promise<User> {
-        const existsUser = !!(await User.findOne({ email }));
+        const existsUser = !!(await db.manager.findOne(User, { email }));
 
         if (existsUser) {
             throw new ApolloError("Email ya existe.");
         }
 
-        const user = await User.new(
-            firstName,
-            lastName,
-            email,
-            password,
-            UserRole.Client
-        );
-        await user.save();
+        let user = await User.new(firstName, lastName, email, password);
+        user = await db.manager.save(user);
+
+        let client: Client | undefined = undefined;
+        let instructor: Instructor | undefined = undefined;
+
+        if (isClient) {
+            client = new Client();
+            client.userID = user.id;
+            await db.manager.save(client);
+        }
+
+        if (isInstructor) {
+            instructor = new Instructor();
+            instructor.userID = user.id;
+            await db.manager.save(instructor);
+        }
+
+        if (client || instructor) {
+            if (client) user.client = client;
+            if (instructor) user.instructor = instructor;
+
+            user = await db.manager.save(user);
+        }
 
         // TODO: login automatically after successful register?
         return user;
     }
 
     @Query(() => [User])
-    async userAll(): Promise<User[]> {
-        return await User.find();
+    async userAll(@Ctx() { db }: RegularContext): Promise<User[]> {
+        return await db.manager.find(User);
     }
 }

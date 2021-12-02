@@ -14,7 +14,7 @@ import cookieParser = require("cookie-parser");
 import { RegularContext } from "./types/RegularContext";
 
 const main = async () => {
-    await createConnection(connectionOptions);
+    const db = await createConnection(connectionOptions);
     console.log("\nDatabase connection successfull!");
 
     const app = express();
@@ -60,6 +60,7 @@ const main = async () => {
         context: ({ req, res }): RegularContext => ({
             req,
             res,
+            db,
         }),
         cache: undefined,
         debug: undefined,

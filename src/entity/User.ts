@@ -1,34 +1,21 @@
-import { Entity, Column, PrimaryGeneratedColumn, BaseEntity } from "typeorm";
-import { ObjectType, Field, registerEnumType } from "type-graphql";
+import {
+    Column,
+    Entity,
+    PrimaryGeneratedColumn,
+    OneToOne,
+    JoinColumn,
+} from "typeorm";
+import { Field, ObjectType, ID } from "type-graphql";
 import { hash } from "argon2";
-
-// TODO: Use namespace merging to access UserRole as User.Role ?
-export enum UserRole {
-    Admin = "admin",
-    Cashier = "cashier",
-    Client = "client",
-    Instructor = "instructor",
-}
-
-registerEnumType(UserRole, {
-    name: "UserRole",
-    description: "Role of the user.",
-});
+import { Client } from "./Client";
+import { Instructor } from "./Instructor";
 
 @ObjectType()
 @Entity()
-export class User extends BaseEntity {
-    @Field()
+export class User {
+    @Field(() => ID)
     @PrimaryGeneratedColumn()
     id!: number;
-
-    @Field(() => UserRole)
-    @Column({
-        type: "enum",
-        enum: UserRole,
-        default: UserRole.Client,
-    })
-    role!: UserRole;
 
     @Field()
     @Column()
@@ -39,12 +26,24 @@ export class User extends BaseEntity {
     lastName!: string;
 
     @Field()
-    @Column()
+    @Column({ unique: true })
     email!: string;
 
     @Field()
     @Column()
     private password!: string;
+
+    @Field(() => Client, { nullable: true })
+    @OneToOne(() => Client, { eager: true })
+    @JoinColumn()
+    client!: Client;
+
+    @Field(() => Instructor, { nullable: true })
+    @OneToOne(() => Instructor, {
+        eager: true,
+    })
+    @JoinColumn()
+    instructor!: Instructor;
 
     // Getters and setters
 
@@ -58,36 +57,24 @@ export class User extends BaseEntity {
     }
 
     // Constructor and factory
-
     private constructor(
         firstName: string,
         lastName: string,
         email: string,
-        hashedPassword: string,
-        role: UserRole
+        hashedPassword: string
     ) {
-        super();
-
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
         this.password = hashedPassword;
-        this.role = role;
     }
 
     static async new(
-        firsName: string,
+        firstName: string,
         lastName: string,
         email: string,
-        plainPassword: string,
-        role: UserRole
+        plainPassword: string
     ): Promise<User> {
-        return new User(
-            firsName,
-            lastName,
-            email,
-            await hash(plainPassword),
-            role
-        );
+        return new User(firstName, lastName, email, await hash(plainPassword));
     }
 }
