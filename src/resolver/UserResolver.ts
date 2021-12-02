@@ -1,4 +1,4 @@
-import { Resolver, Mutation, Query, Arg, Ctx } from "type-graphql";
+import { Resolver, Mutation, Query, Arg, Ctx, ID } from "type-graphql";
 import { ApolloError } from "apollo-server-core";
 import { verify } from "argon2";
 import { RegularContext } from "../types/RegularContext";
@@ -6,6 +6,9 @@ import { login } from "../util/login";
 import { User } from "../entity/User";
 import { Client } from "../entity/Client";
 import { Instructor } from "../entity/Instructor";
+import { randomBytes } from "crypto";
+import { ForgotPasswordToken } from "../entity/ForgotPasswordToken";
+import sendEmail from "../util/sendEmail";
 
 @Resolver()
 export class UserResolver {
@@ -108,6 +111,63 @@ export class UserResolver {
 
         // TODO: login automatically after successful register?
         return user;
+    }
+
+    /**Returns a token for changing a user's password with userChangePassword.*/
+    @Mutation(() => String)
+    async userForgotPassword(
+        @Arg("userEmail", () => String) userEmail: string,
+        @Ctx() { db }: RegularContext
+    ): Promise<string> {
+        // TODO: Check if token already exists.
+        const user = await db.manager.findOne(User, { email: userEmail });
+        if (!user) {
+            throw new ApolloError("User not found.");
+        }
+
+        const tokenString = randomBytes(32).toString("hex");
+
+        let token = new ForgotPasswordToken();
+        token.token = tokenString;
+        token.userID = user.id;
+
+        token = await db.manager.save(token);
+
+        // Send email
+        await sendEmail(
+            `"${user.firstName} ${user.lastName}"  <${user.email}>`,
+            "RadikalGym Change Password",
+            `<p>Hi! You requested a password change. Please use the following link: </p> <br /> <a href="https://localhost:8000/changePassword/${token.token}">Change password</a>`
+        );
+
+        return token.token;
+    }
+
+    /**Changes a user's password using the token returned by userForgotPassword.*/
+    @Mutation(() => Boolean)
+    async userChangePassword(
+        @Arg("token") tokenString: string,
+        @Arg("newPassword") plainPassword: string,
+        @Ctx() { db }: RegularContext
+    ): Promise<boolean> {
+        const token = await db.manager.findOne(
+            ForgotPasswordToken,
+            tokenString
+        );
+        // TODO: Invalidate all user's sessions on changePassword.
+
+        if (!token) throw new ApolloError("Token doesn't exist.");
+
+        // Change password.
+        const user = await db.manager.findOne(User, token.userID);
+        if (!user) throw new ApolloError("User does not exist.");
+
+        user.setPassword(plainPassword);
+        await db.manager.save(user);
+
+        db.manager.delete(ForgotPasswordToken, { token: tokenString });
+
+        return true;
     }
 
     @Query(() => [User])
