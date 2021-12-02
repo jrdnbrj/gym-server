@@ -28,8 +28,8 @@ export class WeekScheduleResolver {
         @Arg("instructorID", () => ID) instructorID: number,
         @Ctx() { db }: RegularContext
     ): Promise<WeekSchedule> {
-        const { year, month, day } = startDateGQL;
-        const startDate = new Date(year, month, day);
+        const { year, month, day, hours, minutes } = startDateGQL;
+        const startDate = new Date(year, month, day, hours, minutes);
 
         const instructor = await db.manager.findOne(Instructor, instructorID);
         if (!instructor) {

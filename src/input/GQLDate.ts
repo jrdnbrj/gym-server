@@ -10,4 +10,10 @@ export class DateInput {
 
     @Field(() => Int)
     year!: number;
+
+    @Field(() => Int)
+    hours!: number;
+
+    @Field(() => Int)
+    minutes!: number;
 }

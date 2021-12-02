@@ -22,7 +22,7 @@ export class WeekSchedule {
     @Column({ default: 3 })
     quotas!: number;
 
-    @Field(() => [Client])
+    @Field(() => [Client], { nullable: true })
     @ManyToMany(() => Client, { eager: true })
     @JoinTable()
     students!: Client[];
