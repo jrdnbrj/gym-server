@@ -12,6 +12,7 @@ import { __prod__, SESSION_SECRET } from "./constants";
 import * as session from "express-session";
 import cookieParser = require("cookie-parser");
 import { RegularContext } from "./types/RegularContext";
+import sendEmail from "./util/sendEmail";
 
 const main = async () => {
     const db = await createConnection(connectionOptions);
@@ -95,6 +96,8 @@ const main = async () => {
     app.listen(PORT, () => {
         console.log(`⚡️[server]: Server listening on localhost:${PORT}`);
     });
+
+    // await sendEmail("neolight101@gmail.com", "Test", "<p>test</p>");
 };
 
 main().catch((e) => console.error(e));

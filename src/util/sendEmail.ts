@@ -10,6 +10,7 @@ const sendEmail = async (to: string, subject: string, html: string) => {
             user: account.user,
             pass: account.pass,
         },
+        secure: false,
     });
 
     const info = await transporter.sendMail({

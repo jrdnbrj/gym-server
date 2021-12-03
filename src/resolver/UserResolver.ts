@@ -152,12 +152,15 @@ export class UserResolver {
 
         token = await db.manager.save(token);
 
+        console.log(`https://localhost:8000/changePassword/${token.token}`)
+        console.log('Token:', token.token)
+
         // Send email
-        await sendEmail(
-            `"${user.firstName} ${user.lastName}"  <${user.email}>`,
-            "RadikalGym Change Password",
-            `<p>Hi! You requested a password change. Please use the following link: </p> <br /> <a href="https://localhost:8000/changePassword/${token.token}">Change password</a>`
-        );
+        // await sendEmail(
+        //     `"${user.firstName} ${user.lastName}"  <${user.email}>`,
+        //     "RadikalGym Change Password",
+        //     `<p>Hi! You requested a password change. Please use the following link: </p> <br /> <a href="https://localhost:8000/changePassword/${token.token}">Change password</a>`
+        // );
 
         return token.token;
     }
