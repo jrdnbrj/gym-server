@@ -13,6 +13,17 @@ import sendEmail from "../util/sendEmail";
 @Resolver()
 export class UserResolver {
     @Query(() => User, { nullable: true })
+    async userByID(
+        @Arg("userID", () => ID) userID: number,
+        @Ctx() { db }: RegularContext
+    ): Promise<User | null> {
+        const user = await db.manager.findOne(User, userID);
+
+        if (!user) return null;
+        return user;
+    }
+
+    @Query(() => User, { nullable: true })
     async userMe(@Ctx() { req, db }: RegularContext): Promise<User | null> {
         const userId = req.session.userId;
         if (!userId) return null;
