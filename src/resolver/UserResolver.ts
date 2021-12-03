@@ -130,10 +130,18 @@ export class UserResolver {
         @Arg("userEmail", () => String) userEmail: string,
         @Ctx() { db }: RegularContext
     ): Promise<string> {
-        // TODO: Check if token already exists.
         const user = await db.manager.findOne(User, { email: userEmail });
         if (!user) {
             throw new ApolloError("User not found.");
+        }
+
+        // If token already exists, then it is deleted and another one is generated.
+        if (
+            !!(await db.manager.findOne(ForgotPasswordToken, {
+                userID: user.id,
+            }))
+        ) {
+            await db.manager.delete(ForgotPasswordToken, { userID: user.id });
         }
 
         const tokenString = randomBytes(32).toString("hex");
