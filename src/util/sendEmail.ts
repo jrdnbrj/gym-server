@@ -1,27 +1,31 @@
 import * as nodemailer from "nodemailer";
+import { SMTP_HOST, SMTP_PASSWORD, SMTP_USER } from "../constants";
 
 const sendEmail = async (to: string, subject: string, html: string) => {
-    const account = await nodemailer.createTestAccount();
+    // const account = await nodemailer.createTestAccount();
 
+    // Configured for Heroku's CloudMailin or Gmail SMTP.
     const transporter = nodemailer.createTransport({
-        host: "smtp.ethereal.email",
+        host: SMTP_HOST,
         port: 587,
-        auth: {
-            user: account.user,
-            pass: account.pass,
-        },
         secure: false,
+        requireTLS: true,
+        auth: {
+            user: SMTP_USER,
+            pass: SMTP_PASSWORD,
+        },
     });
 
     const info = await transporter.sendMail({
-        from: "RadikalGym Support <support@radikalgym.com>",
+        from: "RadikalGym Support",
         to,
         subject,
         html,
+        // headers: { "x-cloudmta-class": "standard" }, For CloudMailin
     });
 
     console.log("Email sent to: " + info.envelope.to);
-    console.log("Preview URL: " + nodemailer.getTestMessageUrl(info));
+    console.log(info.response);
 };
 
 export default sendEmail;
