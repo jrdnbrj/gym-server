@@ -12,10 +12,8 @@ import { __prod__, SESSION_SECRET } from "./constants";
 import * as session from "express-session";
 import cookieParser = require("cookie-parser");
 import { RegularContext } from "./types/RegularContext";
-import sendEmail from "./util/sendEmail";
 
 const main = async () => {
-    sendEmail("neolight1010@gmail.com", "test", "<p>test</p>");
     const db = await createConnection(connectionOptions);
     console.log("\nDatabase connection successfull!");
 
