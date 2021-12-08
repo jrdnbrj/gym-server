@@ -10,6 +10,7 @@ import { ObjectType, Field } from "type-graphql";
 import { Client } from "./Client";
 import { Instructor } from "./Instructor";
 import { Weekday } from "../enum/Weekday";
+import WorkoutType from "../enum/WorkoutType";
 
 @ObjectType()
 @Entity()
@@ -17,6 +18,10 @@ export class WeekSchedule {
     @Field()
     @PrimaryGeneratedColumn()
     id!: number;
+
+    @Field(() => WorkoutType)
+    @Column({ type: "enum", enum: "enum", default: WorkoutType.Stength })
+    workoutType!: WorkoutType;
 
     @Field()
     @Column({ default: 3 })
