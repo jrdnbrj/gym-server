@@ -6,6 +6,7 @@ import { Instructor } from "../entity/Instructor";
 import { ApolloError } from "apollo-server-core";
 import { RegularContext } from "../types/RegularContext";
 import { Client } from "../entity/Client";
+import WorkoutType from "../enum/WorkoutType";
 
 @Resolver()
 export class WeekScheduleResolver {
@@ -26,6 +27,7 @@ export class WeekScheduleResolver {
         @Arg("weekDays", () => [Weekday]) weekdays: Weekday[],
         @Arg("startDate", () => DateInput) startDateGQL: DateInput,
         @Arg("instructorID", () => ID) instructorID: number,
+        @Arg("type", () => WorkoutType) workoutType: WorkoutType,
         @Ctx() { db }: RegularContext
     ): Promise<WeekSchedule> {
         const { year, month, day, hours, minutes } = startDateGQL;
@@ -36,7 +38,12 @@ export class WeekScheduleResolver {
             throw new ApolloError("Instructor not found.");
         }
 
-        const weekSchedule = new WeekSchedule(instructor, weekdays, startDate);
+        const weekSchedule = new WeekSchedule(
+            instructor,
+            weekdays,
+            startDate,
+            workoutType
+        );
         await db.manager.save(weekSchedule);
 
         instructor.weekScheduleIDs.push(weekSchedule.id);

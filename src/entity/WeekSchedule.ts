@@ -51,9 +51,15 @@ export class WeekSchedule {
     @Column({ type: "timestamptz" })
     startDate!: Date;
 
-    constructor(instructor: Instructor, days: Weekday[], startDate: Date) {
+    constructor(
+        instructor: Instructor,
+        days: Weekday[],
+        startDate: Date,
+        workoutType: WorkoutType
+    ) {
         this.instructor = instructor;
         this.days = days;
         this.startDate = startDate;
+        this.workoutType = workoutType;
     }
 }
