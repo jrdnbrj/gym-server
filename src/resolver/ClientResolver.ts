@@ -1,9 +1,15 @@
-import { Resolver, Query, Mutation, Arg, Ctx, ID } from "type-graphql";
+import { Resolver, Query, Mutation, Arg, Ctx } from "type-graphql";
 import { Client } from "../entity/Client";
 import { User } from "../entity/User";
 import { ApolloError } from "apollo-server-core";
 import { RegularContext } from "../types/RegularContext";
 import { WeekSchedule } from "../entity/WeekSchedule";
+
+declare module "express-session" {
+    interface SessionData {
+        userId: number;
+    }
+}
 
 @Resolver()
 export class ClientResolver {
