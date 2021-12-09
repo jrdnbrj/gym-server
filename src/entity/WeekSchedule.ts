@@ -20,7 +20,7 @@ export class WeekSchedule {
     id!: number;
 
     @Field(() => WorkoutType)
-    @Column({ type: "enum", enum: "enum", default: WorkoutType.Stength })
+    @Column({ type: "enum", enum: WorkoutType, default: WorkoutType.Stength })
     workoutType!: WorkoutType;
 
     @Field()
