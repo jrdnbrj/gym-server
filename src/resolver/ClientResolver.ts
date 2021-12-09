@@ -69,6 +69,7 @@ export class ClientResolver {
 
         if (studentIndex >= 0) {
             weekSchedule.students.splice(studentIndex, 1);
+            weekSchedule.quotas += 1;
             await db.manager.save(weekSchedule);
         }
 
