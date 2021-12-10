@@ -9,6 +9,7 @@ import { Instructor } from "../entity/Instructor";
 import { randomBytes } from "crypto";
 import { ForgotPasswordToken } from "../entity/ForgotPasswordToken";
 import sendEmail from "../util/sendEmail";
+import Admin from "../entity/Admin";
 
 @Resolver()
 export class UserResolver {
@@ -86,6 +87,7 @@ export class UserResolver {
         @Arg("password") password: string,
         @Arg("isClient") isClient: boolean,
         @Arg("isInstructor") isInstructor: boolean,
+        @Arg("isAdmin") isAdmin: boolean,
         @Ctx()
         { db }: RegularContext
     ): Promise<User> {
@@ -100,6 +102,7 @@ export class UserResolver {
 
         let client: Client | undefined = undefined;
         let instructor: Instructor | undefined = undefined;
+        let admin: Admin | undefined = undefined;
 
         if (isClient) {
             client = new Client();
@@ -113,9 +116,16 @@ export class UserResolver {
             await db.manager.save(instructor);
         }
 
-        if (client || instructor) {
+        if (isAdmin) {
+            admin = new Admin();
+            admin.userID = user.id;
+            await db.manager.save(admin);
+        }
+
+        if (client || instructor || admin) {
             if (client) user.client = client;
             if (instructor) user.instructor = instructor;
+            if (admin) user.admin = admin;
 
             user = await db.manager.save(user);
         }

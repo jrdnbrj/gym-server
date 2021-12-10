@@ -9,6 +9,7 @@ import { Field, ObjectType, ID } from "type-graphql";
 import { hash } from "argon2";
 import { Client } from "./Client";
 import { Instructor } from "./Instructor";
+import Admin from "./Admin";
 
 @ObjectType()
 @Entity()
@@ -44,6 +45,13 @@ export class User {
     })
     @JoinColumn()
     instructor!: Instructor;
+
+    @Field(() => Admin, { nullable: true })
+    @OneToOne(() => Admin, {
+        eager: true,
+    })
+    @JoinColumn()
+    admin!: Admin;
 
     // Getters and setters
 
