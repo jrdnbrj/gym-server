@@ -60,8 +60,8 @@ export class InstructorResolver {
         const scheduleOfInstructorIndex =
             instructor.weekScheduleIDs.indexOf(weekScheduleID);
 
-        if (scheduleOfInstructorIndex < 0)
-            throw new ApolloError("WeekSchedule not taught by instructor.");
+        // if (scheduleOfInstructorIndex < 0)
+        //     throw new ApolloError("WeekSchedule not taught by instructor.");
 
         const weekSchedule = await db.manager.findOne(
             WeekSchedule,

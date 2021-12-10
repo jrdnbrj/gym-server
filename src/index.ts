@@ -101,8 +101,6 @@ const main = async () => {
     app.listen(PORT, () => {
         console.log(`⚡️[server]: Server listening on localhost:${PORT}`);
     });
-
-    // await sendEmail("neolight101@gmail.com", "Test", "<p>test</p>");
 };
 
 main().catch((e) => console.error(e));
