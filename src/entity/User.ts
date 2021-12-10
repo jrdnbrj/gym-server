@@ -37,21 +37,21 @@ export class User {
     @Field(() => Client, { nullable: true })
     @OneToOne(() => Client, { eager: true })
     @JoinColumn()
-    client!: Client;
+    client!: Client | null;
 
     @Field(() => Instructor, { nullable: true })
     @OneToOne(() => Instructor, {
         eager: true,
     })
     @JoinColumn()
-    instructor!: Instructor;
+    instructor!: Instructor | null;
 
     @Field(() => Admin, { nullable: true })
     @OneToOne(() => Admin, {
         eager: true,
     })
     @JoinColumn()
-    admin!: Admin;
+    admin!: Admin | null;
 
     // Getters and setters
 
