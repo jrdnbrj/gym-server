@@ -2,11 +2,10 @@ import { Resolver, Query, Arg, Mutation, ID, Ctx } from "type-graphql";
 import { WeekSchedule } from "../entity/WeekSchedule";
 import { DateInput } from "../input/GQLDate";
 import { Weekday } from "../enum/Weekday";
-import { Instructor } from "../entity/Instructor";
 import { ApolloError } from "apollo-server-core";
 import { RegularContext } from "../types/RegularContext";
-import { Client } from "../entity/Client";
 import WorkoutType from "../enum/WorkoutType";
+import { User } from "../entity/User";
 
 @Resolver()
 export class WeekScheduleResolver {
@@ -33,21 +32,29 @@ export class WeekScheduleResolver {
         const { year, month, day, hours, minutes } = startDateGQL;
         const startDate = new Date(year, month, day, hours, minutes);
 
-        const instructor = await db.manager.findOne(Instructor, instructorID);
-        if (!instructor) {
+        const instructorUser = await db.manager.findOne(User, instructorID, {
+            relations: ["instructor.weekSchedules"],
+        });
+        if (!instructorUser) {
             throw new ApolloError("Instructor not found.");
         }
 
-        const weekSchedule = new WeekSchedule(
-            instructor,
-            weekdays,
-            startDate,
-            workoutType
-        );
-        await db.manager.save(weekSchedule);
+        if (!instructorUser.isInstructor) {
+            throw new ApolloError(
+                "Not enough privileges. instructorID's user is not an Instructor."
+            );
+        }
 
-        instructor.weekScheduleIDs.push(weekSchedule.id);
-        await db.manager.save(instructor);
+        let weekSchedule = new WeekSchedule();
+        weekSchedule.instructor = instructorUser;
+        weekSchedule.days = weekdays;
+        weekSchedule.startDate = startDate;
+        weekSchedule.workoutType = workoutType;
+
+        weekSchedule = await db.manager.save(weekSchedule);
+
+        instructorUser.instructor.weekSchedules.push(weekSchedule);
+        await db.manager.save(instructorUser);
 
         return weekSchedule;
     }
@@ -67,15 +74,19 @@ export class WeekScheduleResolver {
         if (weekSchedule.quotas == 0)
             throw new ApolloError("WeekSchedule already full.");
 
-        let client = await db.manager.findOne(Client, clientID);
-        if (!client) throw new ApolloError("Client not found.");
+        let clientUser = await db.manager.findOne(User, clientID);
+        if (!clientUser) throw new ApolloError("Client not found.");
+        if (!clientUser.isClient)
+            throw new ApolloError(
+                "Not enough privileges. clientID's user is not a Client."
+            );
 
-        weekSchedule.students.push(client);
+        weekSchedule.students.push(clientUser);
         weekSchedule.quotas -= 1;
         weekSchedule = await db.manager.save(weekSchedule);
 
-        client.weekScheduleIDs.push(weekSchedule.id);
-        await db.manager.save(client);
+        clientUser.client.weekScheduleIDs.push(weekSchedule.id);
+        await db.manager.save(clientUser);
 
         return weekSchedule;
     }

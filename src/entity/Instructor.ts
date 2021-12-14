@@ -1,22 +1,11 @@
-import { Entity, OneToMany, PrimaryGeneratedColumn, Column } from "typeorm";
-import { ObjectType, Field, ID } from "type-graphql";
+import { OneToMany } from "typeorm";
+import { ObjectType, Field } from "type-graphql";
 import { WeekSchedule } from "./WeekSchedule";
 
 @ObjectType()
-@Entity()
 export class Instructor {
-    @Field()
-    @PrimaryGeneratedColumn()
-    id!: number;
-
-    @Field()
-    @Column()
-    userID!: number;
-
-    @Field(() => [ID])
-    @Column("int", { array: true, default: [] })
-    weekScheduleIDs!: number[];
-
+    // TODO: should not be field??
+    @Field(() => [WeekSchedule])
     @OneToMany(() => WeekSchedule, (weekSchedule) => weekSchedule.instructor)
-    weekSchedules!: WeekSchedule[];
+    weekSchedules: WeekSchedule[] = [];
 }

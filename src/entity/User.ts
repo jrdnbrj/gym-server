@@ -1,10 +1,4 @@
-import {
-    Column,
-    Entity,
-    PrimaryGeneratedColumn,
-    OneToOne,
-    JoinColumn,
-} from "typeorm";
+import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 import { Field, ObjectType, ID } from "type-graphql";
 import { hash } from "argon2";
 import { Client } from "./Client";
@@ -34,24 +28,37 @@ export class User {
     @Column()
     private password!: string;
 
-    @Field(() => Client, { nullable: true })
-    @OneToOne(() => Client, { eager: true })
-    @JoinColumn()
-    client!: Client | null;
+    @Field(() => Boolean)
+    @Column({ default: false })
+    isClient!: boolean;
+
+    @Column(() => Client)
+    client!: Client;
+
+    @Field(() => Client, { name: "client", nullable: true })
+    clientField!: Client | null;
+
+    @Field(() => Boolean)
+    @Column({ default: false })
+    isInstructor!: boolean;
 
     @Field(() => Instructor, { nullable: true })
-    @OneToOne(() => Instructor, {
-        eager: true,
-    })
-    @JoinColumn()
-    instructor!: Instructor | null;
+    @Column(() => Instructor)
+    instructor!: Instructor;
+
+    @Field(() => Instructor, { name: "instructor", nullable: true })
+    instructorField!: Instructor | null;
+
+    @Field(() => Boolean)
+    @Column({ default: false })
+    isAdmin!: boolean;
 
     @Field(() => Admin, { nullable: true })
-    @OneToOne(() => Admin, {
-        eager: true,
-    })
-    @JoinColumn()
-    admin!: Admin | null;
+    @Column(() => Admin)
+    admin!: Admin;
+
+    @Field(() => Admin, { name: "admin", nullable: true })
+    adminField!: Admin | null;
 
     // Getters and setters
 
@@ -83,6 +90,12 @@ export class User {
         email: string,
         plainPassword: string
     ): Promise<User> {
-        return new User(firstName, lastName, email, await hash(plainPassword));
+        const user = new User(
+            firstName,
+            lastName,
+            email,
+            await hash(plainPassword)
+        );
+        return user;
     }
 }

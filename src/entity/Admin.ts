@@ -1,16 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column } from "typeorm";
 import { ObjectType, Field } from "type-graphql";
+import { Column } from "typeorm";
 
 @ObjectType()
-@Entity()
 class Admin {
+    @Column({ default: "debugging" })
     @Field()
-    @PrimaryGeneratedColumn()
-    id!: number;
-
-    @Field()
-    @Column()
-    userID!: number;
+    _placeholder!: string;
 }
 
 export default Admin;

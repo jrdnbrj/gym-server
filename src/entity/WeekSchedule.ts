@@ -7,10 +7,9 @@ import {
     JoinTable,
 } from "typeorm";
 import { ObjectType, Field } from "type-graphql";
-import { Client } from "./Client";
-import { Instructor } from "./Instructor";
 import { Weekday } from "../enum/Weekday";
 import WorkoutType from "../enum/WorkoutType";
+import { User } from "./User";
 
 @ObjectType()
 @Entity()
@@ -23,20 +22,21 @@ export class WeekSchedule {
     @Column({ type: "enum", enum: WorkoutType, default: WorkoutType.Stength })
     workoutType!: WorkoutType;
 
+    // TODO: create custom field resolver for quotas.
     @Field()
     @Column({ default: 3 })
     quotas!: number;
 
-    @Field(() => [Client], { nullable: true })
-    @ManyToMany(() => Client, { eager: true })
+    @Field(() => [User], { nullable: true })
+    @ManyToMany(() => User, { eager: true })
     @JoinTable()
-    students!: Client[];
+    students!: User[];
 
-    @Field(() => Instructor)
-    @ManyToOne(() => Instructor, (instructor) => instructor.weekSchedules, {
+    @Field(() => User)
+    @ManyToOne(() => User, (user) => user.instructor!.weekSchedules, {
         eager: true,
     })
-    instructor!: Instructor;
+    instructor!: User;
 
     @Field(() => [Weekday])
     @Column({
@@ -50,16 +50,4 @@ export class WeekSchedule {
     @Field()
     @Column({ type: "timestamptz" })
     startDate!: Date;
-
-    constructor(
-        instructor: Instructor,
-        days: Weekday[],
-        startDate: Date,
-        workoutType: WorkoutType
-    ) {
-        this.instructor = instructor;
-        this.days = days;
-        this.startDate = startDate;
-        this.workoutType = workoutType;
-    }
 }

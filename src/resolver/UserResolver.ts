@@ -1,18 +1,52 @@
-import { Resolver, Mutation, Query, Arg, Ctx, ID } from "type-graphql";
+import {
+    Resolver,
+    Mutation,
+    Query,
+    Arg,
+    Ctx,
+    ID,
+    FieldResolver,
+    Root,
+    ResolverInterface,
+} from "type-graphql";
 import { ApolloError } from "apollo-server-core";
 import { verify } from "argon2";
 import { RegularContext } from "../types/RegularContext";
 import { login } from "../util/login";
 import { User } from "../entity/User";
-import { Client } from "../entity/Client";
-import { Instructor } from "../entity/Instructor";
 import { randomBytes } from "crypto";
 import { ForgotPasswordToken } from "../entity/ForgotPasswordToken";
 import sendEmail from "../util/sendEmail";
+import { Client } from "../entity/Client";
+import { Instructor } from "../entity/Instructor";
 import Admin from "../entity/Admin";
 
-@Resolver()
-export class UserResolver {
+declare module "express-session" {
+    interface SessionData {
+        userId: number;
+    }
+}
+
+@Resolver(() => User)
+export class UserResolver implements ResolverInterface<User> {
+    @FieldResolver()
+    clientField(@Root() user: User) {
+        if (!user.isClient) return null;
+        return user.client;
+    }
+
+    @FieldResolver()
+    instructorField(@Root() user: User) {
+        if (!user.isInstructor) return null;
+        return user.instructor;
+    }
+
+    @FieldResolver()
+    adminField(@Root() user: User) {
+        if (!user.isAdmin) return null;
+        return user.admin;
+    }
+
     @Query(() => User, { nullable: true })
     async userByID(
         @Arg("userID", () => ID) userID: number,
@@ -65,6 +99,7 @@ export class UserResolver {
         return user;
     }
 
+    // TODO: always returns true?
     /**Always returns true. If there's an error, an ApolloError is thrown.*/
     @Mutation(() => Boolean)
     userLogout(@Ctx() { req }: RegularContext) {
@@ -78,6 +113,7 @@ export class UserResolver {
         return true;
     }
 
+    // TODO: require admin permissons.
     /**Creates a new User with a User role.*/
     @Mutation(() => User)
     async userRegister(
@@ -98,37 +134,23 @@ export class UserResolver {
         }
 
         let user = await User.new(firstName, lastName, email, password);
-        user = await db.manager.save(user);
-
-        let client: Client | undefined = undefined;
-        let instructor: Instructor | undefined = undefined;
-        let admin: Admin | undefined = undefined;
 
         if (isClient) {
-            client = new Client();
-            client.userID = user.id;
-            await db.manager.save(client);
+            user.isClient = true;
+            user.client = new Client();
         }
 
         if (isInstructor) {
-            instructor = new Instructor();
-            instructor.userID = user.id;
-            await db.manager.save(instructor);
+            user.isInstructor = true;
+            user.instructor = new Instructor();
         }
 
         if (isAdmin) {
-            admin = new Admin();
-            admin.userID = user.id;
-            await db.manager.save(admin);
+            user.isAdmin = true;
+            user.admin = new Admin();
         }
 
-        if (client || instructor || admin) {
-            if (client) user.client = client;
-            if (instructor) user.instructor = instructor;
-            if (admin) user.admin = admin;
-
-            user = await db.manager.save(user);
-        }
+        user = await db.manager.save(user);
 
         // TODO: login automatically after successful register?
         return user;
@@ -165,6 +187,7 @@ export class UserResolver {
         console.log(`https://localhost:8000/changePassword/${token.token}`);
         console.log("Token:", token.token);
 
+        // TODO: reactivate email.
         // Send email
         // await sendEmail(
         //     `"${user.firstName} ${user.lastName}"  <${user.email}>`,
@@ -204,6 +227,8 @@ export class UserResolver {
 
     @Query(() => [User])
     async userAll(@Ctx() { db }: RegularContext): Promise<User[]> {
-        return await db.manager.find(User);
+        return await db.manager.find(User, {
+            relations: ["instructor.weekSchedules"],
+        });
     }
 }
