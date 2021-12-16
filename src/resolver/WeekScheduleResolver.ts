@@ -53,9 +53,7 @@ export class WeekScheduleResolver {
 
         weekSchedule = await db.manager.save(weekSchedule);
 
-        instructorUser.instructor.weekSchedules.push(weekSchedule);
-        await db.manager.save(instructorUser);
-
+        // TODO: return updated instructor field.
         return weekSchedule;
     }
 
