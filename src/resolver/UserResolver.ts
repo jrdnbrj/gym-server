@@ -184,16 +184,16 @@ export class UserResolver implements ResolverInterface<User> {
 
         token = await db.manager.save(token);
 
-        console.log(`https://localhost:8000/changePassword/${token.token}`);
-        console.log("Token:", token.token);
+        const url = `http://localhost:3000/password/${token.token}`;
+        
+        console.log("URL:", url);
 
-        // TODO: reactivate email.
         // Send email
-        // await sendEmail(
-        //     `"${user.firstName} ${user.lastName}"  <${user.email}>`,
-        //     "RadikalGym Change Password",
-        //     `<p>Hi! You requested a password change. Please use the following link: </p> <br /> <a href="https://localhost:8000/changePassword/${token.token}">Change password</a>`
-        // );
+        await sendEmail(
+            `"${user.firstName} ${user.lastName}"  <${user.email}>`,
+            "Cambia tu contraseña de RADIKAL GYM",
+            `<p>¡Hola! Solicitaste un cambio de contraseña. Utiliza el siguiente enlace para reestablecerla: </p> <br /> <a href="${url}">Cambiar Contraseña</a>`
+        );
 
         return token.token;
     }
