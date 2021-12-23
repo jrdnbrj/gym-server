@@ -25,12 +25,11 @@ export class AdminResolver {
     /**Adds given roles to a User. Must be logged as an admin user to use this mutation.*/
     @Mutation(() => User)
     @UseMiddleware(RequireAdmin)
-    async adminAddUserRoles(
+    async adminUserRoles(
         @Arg("userID") userID: number,
-        @Arg("toClient", { defaultValue: false }) toClient: boolean,
-        @Arg("toInstructor", { defaultValue: false })
-        toInstructor: boolean,
-        @Arg("toAdmin", { defaultValue: false }) toAdmin: boolean,
+        @Arg("isClient") isClient: boolean,
+        @Arg("isInstructor") isInstructor: boolean,
+        @Arg("isAdmin") isAdmin: boolean,
         @Ctx() { db }: RegularContext
     ): Promise<User> {
         // Change privileges
@@ -39,37 +38,27 @@ export class AdminResolver {
             throw new ApolloError("User does not exist.");
         }
 
-        let wasUpdated = false;
+        user.isClient = isClient;
+        // if (!user.client) {
+        //     const client = new Client();
+        //     user.client = client;
+        // }
 
-        if (toClient && !user.isClient) {
-            user.isClient = true;
-            const client = new Client();
+        user.isInstructor = isInstructor;
+        // if (!user.instructor) {
+        //     const instructor = new Instructor();
+        //     user.instructor = instructor;
+        // }
 
-            user.client = client;
-            wasUpdated = true;
-        }
+        user.isAdmin = isAdmin;
+        // if (!user.admin) {
+        //     const admin = new Admin();
+        //     user.admin = admin;
+        // }
 
-        if (toInstructor && !user.isInstructor) {
-            user.isInstructor = true;
-            const instructor = new Instructor();
-
-            user.instructor = instructor;
-            wasUpdated = true;
-        }
-
-        if (toAdmin && !user.isAdmin) {
-            user.isAdmin = true;
-            const admin = new Admin();
-
-            user.admin = admin;
-            wasUpdated = true;
-        }
-
-        if (wasUpdated) {
-            // TODO: admin is null if assigning to user.
-            // TODO: No assignment causes DEP0005: Buffer() is deprecated.
-            await db.manager.save(user);
-        }
+        // TODO: admin is null if assigning to user.
+        // TODO: No assignment causes DEP0005: Buffer() is deprecated.
+        await db.manager.save(user);
 
         return user;
     }
