@@ -27,7 +27,9 @@ export class AttendanceRecordResolver
         return record.attendance;
     }
 
-    /**Returns all attendanceRecords. Results can be filtered given a weekScheduleID.*/
+    /**Returns all attendanceRecords.
+     *
+     * Results can be filtered given a weekScheduleID and a date string (ISO-8601).*/
     @Query(() => [AttendanceRecord])
     async attendanceRecordAll(
         @Arg("weekScheduleID", () => ID, {
@@ -55,7 +57,9 @@ export class AttendanceRecordResolver
                 throw new ApolloError(date.invalidExplanation!);
             }
 
-            filters.date = DateTime.fromISO(dateString).toJSDate();
+            filters.date = dateWithoutTime(
+                DateTime.fromISO(dateString).toJSDate()
+            );
         }
 
         // Query db

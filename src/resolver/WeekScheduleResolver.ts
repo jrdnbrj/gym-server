@@ -21,6 +21,10 @@ export class WeekScheduleResolver {
         });
     }
 
+    /**Creates a new WeekSchedule.
+     *
+     * `startDate` is a datetime string compliant with ISO-8601.
+     */
     @Mutation(() => WeekSchedule)
     async weekScheduleCreate(
         @Arg("weekDays", () => [Weekday]) weekdays: Weekday[],
