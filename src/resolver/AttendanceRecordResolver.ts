@@ -17,7 +17,6 @@ import { ApolloError } from "apollo-server-core";
 import { WeekSchedule } from "../entity/WeekSchedule";
 import dateWithoutTime from "../util/dateWithoutTime";
 import { DateInput } from "../input/GQLDate";
-import { isNull } from "util";
 
 @Resolver(() => AttendanceRecord)
 export class AttendanceRecordResolver
@@ -43,19 +42,24 @@ export class AttendanceRecordResolver
         gqlDate: DateInput | null,
         @Ctx() { db }: RegularContext
     ): Promise<AttendanceRecord[]> {
-        const found = await db.manager.find(AttendanceRecord, {
-            relations: isNull(weekScheduleID) ? [] : ["weekSchedule"],
-            where: {
-                weekSchedule: !isNull(weekScheduleID)
-                    ? { id: weekScheduleID }
-                    : undefined,
-                date: !isNull(gqlDate)
-                    ? dateWithoutTime(
-                          new Date(gqlDate.year, gqlDate.month, gqlDate.day)
-                      )
-                    : undefined,
-            },
-        });
+        // Apply filters
+        const filters: { weekSchedule?: { id: number }; date?: Date } = {};
+
+        if (weekScheduleID) {
+            filters.weekSchedule = { id: weekScheduleID };
+        }
+
+        if (gqlDate) {
+            filters.date = dateWithoutTime(
+                new Date(gqlDate.year, gqlDate.month - 1, gqlDate.day)
+            );
+        }
+
+        // Query db
+        const found = await db.manager.find(
+            AttendanceRecord,
+            Object.keys(filters).length > 0 ? filters : undefined
+        );
         return found;
     }
 
