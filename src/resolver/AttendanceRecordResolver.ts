@@ -16,7 +16,7 @@ import intAsWeekday from "../util/intAsWeekday";
 import { ApolloError } from "apollo-server-core";
 import { WeekSchedule } from "../entity/WeekSchedule";
 import dateWithoutTime from "../util/dateWithoutTime";
-import { DateInput } from "../input/GQLDate";
+import { DateTime } from "luxon";
 
 @Resolver(() => AttendanceRecord)
 export class AttendanceRecordResolver
@@ -35,11 +35,11 @@ export class AttendanceRecordResolver
             nullable: true,
         })
         weekScheduleID: number | null,
-        @Arg("date", () => DateInput, {
+        @Arg("date", () => String, {
             defaultValue: null,
             nullable: true,
         })
-        gqlDate: DateInput | null,
+        dateString: string | null,
         @Ctx() { db }: RegularContext
     ): Promise<AttendanceRecord[]> {
         // Apply filters
@@ -49,10 +49,13 @@ export class AttendanceRecordResolver
             filters.weekSchedule = { id: weekScheduleID };
         }
 
-        if (gqlDate) {
-            filters.date = dateWithoutTime(
-                new Date(gqlDate.year, gqlDate.month - 1, gqlDate.day)
-            );
+        if (dateString) {
+            const date = DateTime.fromISO(dateString);
+            if (!date.isValid) {
+                throw new ApolloError(date.invalidExplanation!);
+            }
+
+            filters.date = DateTime.fromISO(dateString).toJSDate();
         }
 
         // Query db

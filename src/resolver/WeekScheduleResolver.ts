@@ -1,11 +1,11 @@
 import { Resolver, Query, Arg, Mutation, ID, Ctx } from "type-graphql";
 import { WeekSchedule } from "../entity/WeekSchedule";
-import { DateInput } from "../input/GQLDate";
 import { Weekday } from "../enum/Weekday";
 import { ApolloError } from "apollo-server-core";
 import { RegularContext } from "../types/RegularContext";
 import WorkoutType from "../enum/WorkoutType";
 import { User } from "../entity/User";
+import { DateTime } from "luxon";
 
 @Resolver()
 export class WeekScheduleResolver {
@@ -24,13 +24,15 @@ export class WeekScheduleResolver {
     @Mutation(() => WeekSchedule)
     async weekScheduleCreate(
         @Arg("weekDays", () => [Weekday]) weekdays: Weekday[],
-        @Arg("startDate", () => DateInput) startDateGQL: DateInput,
+        @Arg("startDate", () => String) startDateString: string,
         @Arg("instructorID", () => ID) instructorID: number,
         @Arg("type", () => WorkoutType) workoutType: WorkoutType,
         @Ctx() { db }: RegularContext
     ): Promise<WeekSchedule> {
-        const { year, month, day, hours, minutes } = startDateGQL;
-        const startDate = new Date(year, month, day, hours, minutes);
+        const startDate = DateTime.fromISO(startDateString);
+        if (!startDate.isValid) {
+            throw new ApolloError(startDate.invalidExplanation!);
+        }
 
         const instructorUser = await db.manager.findOne(User, instructorID, {
             relations: ["instructor.weekSchedules"],
@@ -48,7 +50,7 @@ export class WeekScheduleResolver {
         let weekSchedule = new WeekSchedule();
         weekSchedule.instructor = instructorUser;
         weekSchedule.days = weekdays;
-        weekSchedule.startDate = startDate;
+        weekSchedule.startDate = startDate.toJSDate();
         weekSchedule.workoutType = workoutType;
 
         weekSchedule = await db.manager.save(weekSchedule);
