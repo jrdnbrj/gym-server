@@ -17,7 +17,7 @@ export class AttendanceRecord {
     @PrimaryGeneratedColumn()
     id!: number;
 
-    @ManyToOne(() => WeekSchedule, { eager: true })
+    @ManyToOne(() => WeekSchedule, { eager: true, onDelete: "CASCADE" })
     @Field(() => WeekSchedule)
     weekSchedule!: WeekSchedule;
 

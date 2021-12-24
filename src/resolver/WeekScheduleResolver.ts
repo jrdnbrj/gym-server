@@ -1,4 +1,12 @@
-import { Resolver, Query, Arg, Mutation, ID, Ctx } from "type-graphql";
+import {
+    Resolver,
+    Query,
+    Arg,
+    Mutation,
+    ID,
+    Ctx,
+    UseMiddleware,
+} from "type-graphql";
 import { WeekSchedule } from "../entity/WeekSchedule";
 import { Weekday } from "../enum/Weekday";
 import { ApolloError } from "apollo-server-core";
@@ -6,6 +14,7 @@ import { RegularContext } from "../types/RegularContext";
 import WorkoutType from "../enum/WorkoutType";
 import { User } from "../entity/User";
 import { DateTime } from "luxon";
+import RequireAdmin from "../gql_middleware/RequireAdmin";
 
 @Resolver()
 export class WeekScheduleResolver {
@@ -93,5 +102,25 @@ export class WeekScheduleResolver {
         await db.manager.save(clientUser);
 
         return weekSchedule;
+    }
+
+    @Mutation(() => Boolean)
+    @UseMiddleware(RequireAdmin)
+    async weekScheduleRemove(
+        @Arg("weekScheduleID") weekScheduleID: number,
+        @Ctx() { db }: RegularContext
+    ): Promise<boolean> {
+        const weekSchedule = await db.manager.findOne(
+            WeekSchedule,
+            weekScheduleID
+        );
+
+        if (!weekSchedule) {
+            throw new ApolloError("WeekSchedule with given ID doesn't exist.");
+        }
+
+        await db.manager.remove(weekSchedule);
+
+        return true;
     }
 }
