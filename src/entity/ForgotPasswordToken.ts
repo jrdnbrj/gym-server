@@ -1,7 +1,7 @@
-import { Entity, Column, PrimaryColumn } from "typeorm";
+import { Entity, Column, PrimaryColumn, BaseEntity } from "typeorm";
 
 @Entity()
-export class ForgotPasswordToken {
+export class ForgotPasswordToken extends BaseEntity {
     @PrimaryColumn()
     token!: string;
 

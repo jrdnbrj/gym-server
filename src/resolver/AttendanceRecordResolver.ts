@@ -63,7 +63,7 @@ export class AttendanceRecordResolver
         }
 
         // Query db
-        const found = await db.manager.find(
+        const found = await db.manager.find<AttendanceRecord>(
             AttendanceRecord,
             Object.keys(filters).length > 0 ? filters : undefined
         );

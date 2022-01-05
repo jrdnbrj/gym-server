@@ -56,7 +56,7 @@ export class InstructorResolver {
     async instructorSendEmailWeekSchedule(
         @Arg("weekScheduleID") weekScheduleID: number,
         @Arg("message") message: string,
-        @Ctx() { db, req }: RegularContext
+        @Ctx() { db, req, transporter }: RegularContext
     ): Promise<boolean> {
         const instructorUser = (await db.manager.findOne(
             User,
@@ -88,11 +88,11 @@ export class InstructorResolver {
         }
 
         for (let clientUser of weekSchedule.students) {
-            await sendEmail(
-                clientUser.email,
-                `Aviso de ${instructorUser.firstName} ${instructorUser.lastName}`,
-                `<p>${message}</p>`
-            );
+            await sendEmail(transporter, {
+                to: clientUser.email,
+                subject: `Aviso de ${instructorUser.firstName} ${instructorUser.lastName}`,
+                html: `<p>${message}</p>`,
+            });
         }
 
         return true;

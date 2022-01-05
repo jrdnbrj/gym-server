@@ -2,16 +2,23 @@ import "reflect-metadata";
 import { createConnection } from "typeorm";
 import connectionOptions from "../ormconfig";
 import { ApolloServer, ApolloServerExpressConfig } from "apollo-server-express";
-import { buildSchema } from "type-graphql";
 import * as express from "express";
 import {
     ApolloServerPluginLandingPageGraphQLPlayground,
     ApolloServerPluginLandingPageDisabled,
 } from "apollo-server-core";
-import { __prod__, SESSION_SECRET } from "./constants";
+import {
+    __prod__,
+    SESSION_SECRET,
+    SMTP_HOST,
+    SMTP_USER,
+    SMTP_PASSWORD,
+} from "./constants";
 import * as session from "express-session";
 import cookieParser = require("cookie-parser");
 import { RegularContext } from "./types/RegularContext";
+import { buildGqlSchema } from "./util/buildGqlSchema";
+import * as nodemailer from "nodemailer";
 
 declare module "express-session" {
     interface SessionData {
@@ -22,6 +29,19 @@ declare module "express-session" {
 const main = async () => {
     const db = await createConnection(connectionOptions);
     console.log("\nDatabase connection successfull!");
+
+    // Email transporter
+    // Configured for Heroku's CloudMailin or Gmail SMTP.
+    const transporter = nodemailer.createTransport({
+        host: SMTP_HOST,
+        port: 587,
+        secure: false,
+        requireTLS: true,
+        auth: {
+            user: SMTP_USER,
+            pass: SMTP_PASSWORD,
+        },
+    });
 
     const app = express();
     const PORT = 8000;
@@ -45,10 +65,7 @@ const main = async () => {
     );
 
     // Configure Apollo Server
-    const schema = await buildSchema({
-        resolvers: [__dirname + "/resolver/**/*.ts"],
-    });
-
+    const schema = await buildGqlSchema();
     // TODO: Find a more elegant  approach to passing apolloServerConfig, as
     // new ApolloServer() seems to receive a config parameter of type any in
     // Apollo 3.
@@ -67,6 +84,7 @@ const main = async () => {
             req,
             res,
             db,
+            transporter,
         }),
         cache: undefined,
         debug: undefined,

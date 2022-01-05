@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 import { Field, ObjectType, ID } from "type-graphql";
 import { hash } from "argon2";
 import { Client } from "./Client";
@@ -7,7 +7,7 @@ import Admin from "./Admin";
 
 @ObjectType()
 @Entity()
-export class User {
+export class User extends BaseEntity {
     @Field(() => ID)
     @PrimaryGeneratedColumn()
     id!: number;
@@ -78,6 +78,8 @@ export class User {
         email: string,
         hashedPassword: string
     ) {
+        super();
+
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;

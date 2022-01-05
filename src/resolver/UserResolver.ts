@@ -47,23 +47,27 @@ export class UserResolver implements ResolverInterface<User> {
         return user.admin;
     }
 
+    // TODO: use @Info to select realtion fields.
     @Query(() => User, { nullable: true })
     async userByID(
-        @Arg("userID", () => ID) userID: number,
-        @Ctx() { db }: RegularContext
+        @Arg("userID", () => ID) userID: number
     ): Promise<User | null> {
-        const user = await db.manager.findOne(User, userID);
+        const user = await User.findOne(userID, {
+            relations: ["instructor.weekSchedules"],
+        });
 
         if (!user) return null;
         return user;
     }
 
     @Query(() => User, { nullable: true })
-    async userMe(@Ctx() { req, db }: RegularContext): Promise<User | null> {
+    async userMe(@Ctx() { req }: RegularContext): Promise<User | null> {
         const userId = req.session.userId;
         if (!userId) return null;
 
-        const user = await db.manager.findOne(User, userId);
+        const user = await User.findOne(userId, {
+            relations: ["instructor.weekSchedules"],
+        });
 
         if (!user) return null;
         return user;
@@ -73,13 +77,16 @@ export class UserResolver implements ResolverInterface<User> {
     async userLogin(
         @Arg("email") email: string,
         @Arg("password") plainPassword: string,
-        @Ctx() { req, db }: RegularContext
+        @Ctx() { req }: RegularContext
     ): Promise<User> {
         const invalidEmailOrPasswordError = new ApolloError(
             "Email o contraseña inválida."
         );
 
-        const user = await db.manager.findOne(User, { email });
+        const user = await User.findOne(
+            { email },
+            { relations: ["instructor.weekSchedules"] }
+        );
 
         // user does not exist.
         if (!user) {
@@ -100,7 +107,7 @@ export class UserResolver implements ResolverInterface<User> {
     }
 
     // TODO: always returns true?
-    /**Always returns true. If there's an error, an ApolloError is thrown.*/
+    /**Always returns true if successful. If there's an error, an ApolloError is thrown.*/
     @Mutation(() => Boolean)
     userLogout(@Ctx() { req }: RegularContext) {
         let error: string | null = null;
@@ -157,10 +164,11 @@ export class UserResolver implements ResolverInterface<User> {
     }
 
     /**Returns a token for changing a user's password with userChangePassword.*/
+    // TODO: needs testing
     @Mutation(() => String)
     async userForgotPassword(
         @Arg("userEmail", () => String) userEmail: string,
-        @Ctx() { db }: RegularContext
+        @Ctx() { db, transporter }: RegularContext
     ): Promise<string> {
         const user = await db.manager.findOne(User, { email: userEmail });
         if (!user) {
@@ -185,15 +193,15 @@ export class UserResolver implements ResolverInterface<User> {
         token = await db.manager.save(token);
 
         const url = `http://localhost:3000/password/${token.token}`;
-        
+
         console.log("URL:", url);
 
         // Send email
-        await sendEmail(
-            `"${user.firstName} ${user.lastName}"  <${user.email}>`,
-            "Cambia tu contraseña de RADIKAL GYM",
-            `<p>¡Hola! Solicitaste un cambio de contraseña. Utiliza el siguiente enlace para reestablecerla: </p> <br /> <a href="${url}">Cambiar Contraseña</a>`
-        );
+        await sendEmail(transporter, {
+            to: `"${user.firstName} ${user.lastName}"  <${user.email}>`,
+            subject: "Cambia tu contraseña de RADIKAL GYM",
+            html: `<p>¡Hola! Solicitaste un cambio de contraseña. Utiliza el siguiente enlace para reestablecerla: </p> <br /> <a href="${url}">Cambiar Contraseña</a>`,
+        });
 
         return token.token;
     }
@@ -217,17 +225,17 @@ export class UserResolver implements ResolverInterface<User> {
         const user = await db.manager.findOne(User, token.userID);
         if (!user) throw new ApolloError("User does not exist.");
 
-        user.setPassword(plainPassword);
+        await user.setPassword(plainPassword);
         await db.manager.save(user);
 
-        db.manager.delete(ForgotPasswordToken, { token: tokenString });
+        await db.manager.delete(ForgotPasswordToken, { token: tokenString });
 
         return true;
     }
 
     @Query(() => [User])
-    async userAll(@Ctx() { db }: RegularContext): Promise<User[]> {
-        return await db.manager.find(User, {
+    async userAll(): Promise<User[]> {
+        return await User.find({
             relations: ["instructor.weekSchedules"],
         });
     }
