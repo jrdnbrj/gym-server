@@ -13,7 +13,7 @@
         "@types/node": "^16.11.9",
         "@types/nodemailer": "^6.4.4",
         "@types/npm": "^7.19.0",
-        "faker": "^5.5.3",
+        "faker": "5.5.3",
         "jest": "^27.4.5",
         "nodemon": "^2.0.15",
         "ts-jest": "^27.1.2",

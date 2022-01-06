@@ -5,22 +5,25 @@ import {
     ManyToMany,
     ManyToOne,
     JoinTable,
+    BaseEntity,
 } from "typeorm";
 import { ObjectType, Field } from "type-graphql";
 import { Weekday } from "../enum/Weekday";
-import WorkoutType from "../enum/WorkoutType";
 import { User } from "./User";
+import { WorkoutType } from "./WorkoutType";
 
 @ObjectType()
 @Entity()
-export class WeekSchedule {
+export class WeekSchedule extends BaseEntity {
     @Field()
     @PrimaryGeneratedColumn()
     id!: number;
 
-    @Field(() => WorkoutType)
-    @Column({ type: "enum", enum: WorkoutType, default: WorkoutType.Stength })
-    workoutType!: WorkoutType;
+    @ManyToOne(() => WorkoutType, { onDelete: "CASCADE" })
+    workoutType!: Promise<WorkoutType>;
+
+    @Field(() => WorkoutType, { name: "workoutType" })
+    _workoutTypeField!: WorkoutType;
 
     // TODO: create custom field resolver for quotas.
     @Field()

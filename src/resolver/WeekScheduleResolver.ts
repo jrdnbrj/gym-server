@@ -6,18 +6,26 @@ import {
     ID,
     Ctx,
     UseMiddleware,
+    ResolverInterface,
+    Root,
+    FieldResolver,
 } from "type-graphql";
 import { WeekSchedule } from "../entity/WeekSchedule";
 import { Weekday } from "../enum/Weekday";
 import { ApolloError } from "apollo-server-core";
 import { RegularContext } from "../types/RegularContext";
-import WorkoutType from "../enum/WorkoutType";
 import { User } from "../entity/User";
 import { DateTime } from "luxon";
 import RequireAdmin from "../gql_middleware/RequireAdmin";
+import { WorkoutType } from "../entity/WorkoutType";
 
-@Resolver()
-export class WeekScheduleResolver {
+@Resolver(() => WeekSchedule)
+export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
+    @FieldResolver()
+    async _workoutTypeField(@Root() ws: WeekSchedule) {
+        return await ws.workoutType;
+    }
+
     // TODO: get available WeekSchedules.
 
     @Query(() => [WeekSchedule])
@@ -39,7 +47,7 @@ export class WeekScheduleResolver {
         @Arg("weekDays", () => [Weekday]) weekdays: Weekday[],
         @Arg("startDate", () => String) startDateString: string,
         @Arg("instructorID", () => ID) instructorID: number,
-        @Arg("type", () => WorkoutType) workoutType: WorkoutType,
+        @Arg("type", () => String) workoutType: string,
         @Ctx() { db }: RegularContext
     ): Promise<WeekSchedule> {
         const startDate = DateTime.fromISO(startDateString);
@@ -64,7 +72,9 @@ export class WeekScheduleResolver {
         weekSchedule.instructor = instructorUser;
         weekSchedule.days = weekdays;
         weekSchedule.startDate = startDate.toJSDate();
-        weekSchedule.workoutType = workoutType;
+        weekSchedule.workoutType = Promise.resolve(
+            await WorkoutType.findOneOrFail(workoutType)
+        );
 
         weekSchedule = await db.manager.save(weekSchedule);
 

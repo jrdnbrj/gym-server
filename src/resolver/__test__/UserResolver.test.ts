@@ -9,13 +9,7 @@ import { genUserData } from "../../../test/util/genUserData";
 import { gCall } from "../../../test/util/gCall";
 import { userByIdQuery } from "./query/userByIdQuery";
 import {
-    newAdminFields,
-    newClientFields,
     newFullPrivilegeUserFields,
-    newInstructorFields,
-    newNonAdminFields,
-    newNonClientFields,
-    newNonInstructorFields,
     newNoPrivilegeUserFields,
     newUserRoleFields,
 } from "./util/newUserFields";
