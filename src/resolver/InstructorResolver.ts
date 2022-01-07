@@ -12,7 +12,6 @@ import { ApolloError } from "apollo-server-core";
 import { RegularContext } from "../types/RegularContext";
 import { WeekSchedule } from "../entity/WeekSchedule";
 import sendEmail from "../util/sendEmail";
-import { Not } from "typeorm";
 import RequireInstructor from "../gql_middleware/RequireInstructor";
 
 declare module "express-session" {
@@ -60,7 +59,8 @@ export class InstructorResolver {
     ): Promise<boolean> {
         const instructorUser = (await db.manager.findOne(
             User,
-            req.session.userId!
+            req.session.userId!,
+            { relations: ["instructor.weekSchedules"] }
         ))!;
 
         const scheduleOfInstructorIndex =
