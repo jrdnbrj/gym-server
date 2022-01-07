@@ -18,17 +18,20 @@ export class WorkoutTypeResolver {
     ): Promise<WorkoutType> {
         if (await WorkoutType.findOne(name)) {
             throw new ApolloError(
-                "WorkoutType with given name already exists."
+                // "WorkoutType with given name already exists."
+                "Ya existe una clase con ese nombre."
             );
         }
 
         if (!isEmoji(emoji)) {
-            throw new ApolloError("Invalid emoji.");
+            // throw new ApolloError("Invalid emoji.");
+            throw new ApolloError("Ingresa un emoji válido.");
         }
 
         if (await WorkoutType.findOne({ emoji }))
             throw new ApolloError(
-                "WorkoutType with given emoji already exists."
+                // "WorkoutType with given emoji already exists."
+                "Ya existe una clase con el mismo emoji. Usa otro."
             );
 
         return await WorkoutType.create({
