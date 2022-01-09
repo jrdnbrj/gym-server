@@ -95,7 +95,7 @@ describe("workoutTypeCreate mutation", () => {
         expect(errors).toBeTruthy();
 
         expect(errors!.length).toEqual(1);
-        expect(errors![0].message.toLowerCase()).toContain("already exists");
+        expect(errors![0].message.toLowerCase()).toContain("con ese nombre");
     });
 
     it("should fail when using a duplicate emoji", async () => {
@@ -118,9 +118,7 @@ describe("workoutTypeCreate mutation", () => {
         expect(errors).toBeTruthy();
 
         expect(errors!.length).toEqual(1);
-        expect(errors![0].message.toLowerCase()).toContain(
-            "with given emoji already exists"
-        );
+        expect(errors![0].message.toLowerCase()).toContain("mismo emoji");
     });
 
     it("should fail when given a non-emoji as argument", async () => {
@@ -136,6 +134,6 @@ describe("workoutTypeCreate mutation", () => {
         expect(errors).toBeTruthy();
 
         expect(errors!.length).toEqual(1);
-        expect(errors![0].message.toLowerCase()).toContain("invalid emoji");
+        expect(errors![0].message.toLowerCase()).toContain("emoji válido");
     });
 });
