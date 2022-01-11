@@ -7,6 +7,7 @@ import * as faker from "faker";
 import { randomEmoji } from "../../../test/util/randomEmoji";
 import { workoutTypeCreateMutation } from "./mutation/workoutTypeCreateMutation";
 import { gCall } from "../../../test/util/gCall";
+import { genDbWorkoutType } from "../../../test/util/genDbWorkoutType";
 
 let db: Connection;
 
@@ -20,7 +21,7 @@ afterAll(async () => {
 
 describe("workoutTypeAll query", () => {
     test("on empty db", async () => {
-        await WorkoutType.getRepository().delete({});
+        await WorkoutType.delete({});
 
         const data = await gCallExpectNoErrors(workoutTypeAllQuery);
 
@@ -29,22 +30,14 @@ describe("workoutTypeAll query", () => {
     });
 
     test("with random WorkoutTypes", async () => {
-        await WorkoutType.getRepository().delete({});
+        await WorkoutType.delete({});
 
         const testTypes: WorkoutType[] = [];
 
         // Random n between 50 and 100.
         const n = Math.random() * 50 + 50;
         for (let i = 0; i < n; i++) {
-            let wType = new WorkoutType();
-
-            wType.name = faker.datatype.uuid();
-            wType.emoji = randomEmoji();
-
-            while (testTypes.map((t) => t.emoji).indexOf(wType.emoji) >= 0)
-                wType.emoji = randomEmoji();
-
-            testTypes.push(await wType.save());
+            testTypes.push(await genDbWorkoutType(testTypes));
         }
 
         // Query
@@ -76,12 +69,7 @@ describe("workoutTypeCreate mutation", () => {
     });
 
     it("should fail when using a duplicate name", async () => {
-        const oldType = WorkoutType.create({
-            name: faker.datatype.uuid(),
-            emoji: randomEmoji(),
-        });
-
-        await oldType.save();
+        const oldType = await genDbWorkoutType();
 
         const { data, errors } = await gCall({
             source: workoutTypeCreateMutation.loc!.source,
@@ -99,12 +87,7 @@ describe("workoutTypeCreate mutation", () => {
     });
 
     it("should fail when using a duplicate emoji", async () => {
-        const oldType = WorkoutType.create({
-            name: faker.datatype.uuid(),
-            emoji: randomEmoji(),
-        });
-
-        await oldType.save();
+        const oldType = await genDbWorkoutType();
 
         const { data, errors } = await gCall({
             source: workoutTypeCreateMutation.loc!.source,

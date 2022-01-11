@@ -4,14 +4,11 @@ import {
     ResolverInterface,
     Root,
     Query,
-    Ctx,
     Mutation,
     Arg,
     ID,
-    Float,
 } from "type-graphql";
 import { AttendanceRecord } from "../entity/AttendanceRecord";
-import { RegularContext } from "../types/RegularContext";
 import intAsWeekday from "../util/intAsWeekday";
 import { ApolloError } from "apollo-server-core";
 import { WeekSchedule } from "../entity/WeekSchedule";
@@ -41,8 +38,7 @@ export class AttendanceRecordResolver
             defaultValue: null,
             nullable: true,
         })
-        dateString: string | null,
-        @Ctx() { db }: RegularContext
+        dateString: string | null
     ): Promise<AttendanceRecord[]> {
         // Apply filters
         const filters: { weekSchedule?: { id: number }; date?: Date } = {};
@@ -62,9 +58,9 @@ export class AttendanceRecordResolver
             );
         }
 
+        // FIXME: weird type annotation                v
         // Query db
-        const found = await db.manager.find<AttendanceRecord>(
-            AttendanceRecord,
+        const found = await AttendanceRecord.find<AttendanceRecord>(
             Object.keys(filters).length > 0 ? filters : undefined
         );
         return found;
@@ -73,14 +69,10 @@ export class AttendanceRecordResolver
     /** Creates a new AttendanceRecord for the current date with all students `attended` as `true`.*/
     @Mutation(() => AttendanceRecord)
     async attendanceRecordCreate(
-        @Arg("weekScheduleID") weekScheduleID: number,
-        @Ctx() { db }: RegularContext
+        @Arg("weekScheduleID") weekScheduleID: number
     ): Promise<AttendanceRecord> {
         // TODO: Fix wrong today's weekDay bug. Related to Docker container.
-        const weekSchedule = await db.manager.findOne(
-            WeekSchedule,
-            weekScheduleID
-        );
+        const weekSchedule = await WeekSchedule.findOne(weekScheduleID);
         if (!weekSchedule) throw new ApolloError("WeekSchedule not found.");
 
         // Validate date and day.
@@ -100,7 +92,7 @@ export class AttendanceRecordResolver
         }
 
         if (
-            await db.manager.findOne(AttendanceRecord, {
+            await AttendanceRecord.findOne({
                 relations: ["weekSchedule"],
                 where: { weekSchedule: { id: weekScheduleID }, date: today },
             })
@@ -123,7 +115,7 @@ export class AttendanceRecordResolver
         record.attendance = attendance;
 
         // Save
-        await db.manager.save(record);
+        await record.save();
 
         return record;
     }
@@ -131,12 +123,11 @@ export class AttendanceRecordResolver
     private async _attendanceRecordSetAttended(
         attendedValue: boolean,
         weekScheduleID: number,
-        notAssistedIDs: number[],
-        { db }: RegularContext
+        notAssistedIDs: string[]
     ): Promise<AttendanceRecord> {
         const today = dateWithoutTime(new Date());
 
-        const record = await db.manager.findOne(AttendanceRecord, {
+        const record = await AttendanceRecord.findOne({
             relations: ["weekSchedule"],
             where: { weekSchedule: { id: weekScheduleID }, date: today },
         });
@@ -161,7 +152,7 @@ export class AttendanceRecordResolver
             record.attendance[studentIndex].attended = attendedValue;
         }
 
-        await db.manager.save(record);
+        await record.save();
         return record;
     }
 
@@ -169,14 +160,12 @@ export class AttendanceRecordResolver
     @Mutation(() => AttendanceRecord)
     async attendanceRecordSetNotAssisted(
         @Arg("weekScheduleID") weekScheduleID: number,
-        @Arg("notAssistedIDs", () => [Float]) notAssistedIDs: number[],
-        @Ctx() context: RegularContext
+        @Arg("notAssistedIDs", () => [ID]) notAssistedIDs: string[]
     ): Promise<AttendanceRecord> {
         return this._attendanceRecordSetAttended(
             false,
             weekScheduleID,
-            notAssistedIDs,
-            context
+            notAssistedIDs
         );
     }
 
@@ -184,14 +173,12 @@ export class AttendanceRecordResolver
     @Mutation(() => AttendanceRecord)
     async attendanceRecordSetAssisted(
         @Arg("weekScheduleID") weekScheduleID: number,
-        @Arg("notAssistedIDs", () => [Float]) notAssistedIDs: number[],
-        @Ctx() context: RegularContext
+        @Arg("notAssistedIDs", () => [ID]) notAssistedIDs: string[]
     ): Promise<AttendanceRecord> {
         return this._attendanceRecordSetAttended(
             true,
             weekScheduleID,
-            notAssistedIDs,
-            context
+            notAssistedIDs
         );
     }
 }

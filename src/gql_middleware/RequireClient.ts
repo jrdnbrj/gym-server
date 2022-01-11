@@ -5,7 +5,7 @@ import { User } from "../entity/User";
 
 declare module "express-session" {
     interface SessionData {
-        userId: number;
+        userId: string;
     }
 }
 
@@ -13,7 +13,7 @@ const RequireClient: MiddlewareFn<RegularContext> = async (
     { context },
     next
 ) => {
-    const { req, db } = context;
+    const { req } = context;
 
     const loggedUserID = req.session.userId;
     if (!loggedUserID) {
@@ -21,7 +21,7 @@ const RequireClient: MiddlewareFn<RegularContext> = async (
     }
 
     // TODO: improve error message.
-    const loggedUser = await db.manager.findOne(User, loggedUserID);
+    const loggedUser = await User.findOne(loggedUserID);
     if (!loggedUser) {
         throw new ApolloError(
             "Logged in user has been deleted. Please, login again."

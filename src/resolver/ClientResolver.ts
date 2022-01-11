@@ -5,6 +5,7 @@ import {
     Arg,
     Ctx,
     UseMiddleware,
+    ID,
 } from "type-graphql";
 import { Client } from "../entity/Client";
 import { User } from "../entity/User";
@@ -15,7 +16,7 @@ import RequireClient from "../gql_middleware/RequireClient";
 
 declare module "express-session" {
     interface SessionData {
-        userId: number;
+        userId: string;
     }
 }
 
@@ -23,10 +24,9 @@ declare module "express-session" {
 export class ClientResolver {
     @Mutation(() => User)
     async clientRegister(
-        @Arg("userID") userID: number,
-        @Ctx() { db }: RegularContext
+        @Arg("userID", () => ID) userID: string
     ): Promise<User> {
-        const user = await db.manager.findOne(User, userID);
+        const user = await User.findOne(userID);
 
         if (!user) {
             throw new ApolloError("User not found.");
@@ -35,14 +35,14 @@ export class ClientResolver {
         const client = new Client();
 
         user.client = client;
-        await db.manager.save(user);
+        await user.save();
 
         return user;
     }
 
     @Query(() => [User])
-    async clientAll(@Ctx() { db }: RegularContext): Promise<User[]> {
-        return await db.manager.find(User, { where: { isClient: true } });
+    async clientAll(): Promise<User[]> {
+        return await User.find({ where: { isClient: true } });
     }
 
     /**Deletes a client's weekSchedule reservation.
@@ -52,13 +52,12 @@ export class ClientResolver {
     @UseMiddleware(RequireClient)
     async clientRemoveReservation(
         @Arg("weekScheduleID") weekScheduleID: number,
-        @Ctx() { db, req }: RegularContext
+        @Ctx() { req }: RegularContext
     ): Promise<boolean> {
-        const user = (await db.manager.findOne(User, req.session.userId!))!;
+        const user = (await User.findOne(req.session.userId!))!;
 
         // Validate weekSchedule
-        let weekSchedule = await db.manager.findOne(
-            WeekSchedule,
+        let weekSchedule = await WeekSchedule.findOne(
             { id: weekScheduleID },
             { relations: ["students"] }
         );
@@ -78,12 +77,12 @@ export class ClientResolver {
         if (studentIndex >= 0) {
             weekSchedule.students.splice(studentIndex, 1);
             weekSchedule.quotas += 1;
-            await db.manager.save(weekSchedule);
+            await weekSchedule.save();
         }
 
         if (weekScheduleInClientIndex >= 0) {
             user.client.weekScheduleIDs.splice(weekScheduleInClientIndex, 1);
-            await db.manager.save(user);
+            await user.save();
         }
 
         return true;

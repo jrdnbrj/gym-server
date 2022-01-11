@@ -26,6 +26,7 @@ import {
 import { ForgotPasswordToken } from "../../entity/ForgotPasswordToken";
 import { userChangePasswordMutation } from "./mutation/userChangePasswordMutation";
 import { userAllQuery } from "./query/userAllQuery";
+import { randomUUID } from "crypto";
 
 let db: Connection;
 
@@ -43,7 +44,6 @@ describe("userRegister mutation", () => {
         const userPassword = faker.internet.password();
 
         const data = await gCallExpectNoErrors(userRegisterMutation, {
-            context: { db },
             variableValues: {
                 ...user,
                 password: userPassword,
@@ -68,7 +68,6 @@ describe("userRegister mutation", () => {
 
         expect(dbUser).toBeDefined();
         expect(dbUser).toMatchObject<Partial<User>>({
-            id: Number.parseInt(result.id),
             ...user,
             isClient: false,
             isInstructor: false,
@@ -96,9 +95,6 @@ describe("userRegister mutation", () => {
                 isInstructor: false,
                 isAdmin: false,
             },
-            contextValue: {
-                db,
-            },
         });
 
         // Test mutation results
@@ -121,9 +117,6 @@ describe("userRegister mutation", () => {
                 isInstructor: true,
                 isAdmin: true,
             },
-            context: {
-                db,
-            },
         });
 
         const result = data!.userRegister;
@@ -143,7 +136,6 @@ describe("userRegister mutation", () => {
 
         expect(dbUser).toBeDefined();
         expect(dbUser).toMatchObject<Partial<User>>({
-            id: Number.parseInt(result.id),
             ...user,
             ...newFullPrivilegeUserFields,
         });
@@ -174,9 +166,6 @@ describe("userByID query", () => {
             variableValues: {
                 userID: dbUser.id,
             },
-            context: {
-                db,
-            },
         });
     });
 });
@@ -198,7 +187,6 @@ describe("userLogin mutation", () => {
                     password: userPassword,
                 },
                 context: {
-                    db,
                     req,
                 },
             }
@@ -227,7 +215,6 @@ describe("userLogin mutation", () => {
             dbUser,
             {
                 context: {
-                    db,
                     req,
                 },
                 variableValues: {
@@ -266,7 +253,6 @@ describe("userLogin mutation", () => {
                 password: incorrectPassword,
             },
             contextValue: {
-                db,
                 req,
             },
         });
@@ -337,7 +323,6 @@ describe("userMe query", () => {
 
         const data = await gCallExpectNoErrors(userMeQuery, {
             context: {
-                db,
                 req,
             },
         });
@@ -384,9 +369,6 @@ describe("userChangePassword mutation", () => {
                 token: token.token,
                 newPassword,
             },
-            context: {
-                db,
-            },
         });
 
         expect(data.userChangePassword).toEqual(true);
@@ -417,9 +399,6 @@ describe("userChangePassword mutation", () => {
                 token: token.token,
                 newPassword,
             },
-            contextValue: {
-                db,
-            },
         });
 
         const dbToken = await ForgotPasswordToken.findOne(token.token);
@@ -447,9 +426,6 @@ describe("userChangePassword mutation", () => {
                 token: "incorrect-token",
                 newPassword,
             },
-            contextValue: {
-                db,
-            },
         });
 
         expect(data).toBeFalsy();
@@ -464,7 +440,7 @@ describe("userChangePassword mutation", () => {
     it("should throw an error when token's userID is invalid", async () => {
         const token = new ForgotPasswordToken();
         token.token = "my-token";
-        token.userID = 295;
+        token.userID = randomUUID();
 
         await token.save();
 
@@ -475,9 +451,6 @@ describe("userChangePassword mutation", () => {
             variableValues: {
                 token: token.token,
                 newPassword,
-            },
-            contextValue: {
-                db,
             },
         });
 
@@ -531,9 +504,7 @@ describe("useAll query", () => {
         const resultUsers: User[] = data.userAll;
 
         for (let user of testUsers) {
-            const i = resultUsers
-                .map((u) => Number.parseInt(u.id as any))
-                .indexOf(user.id);
+            const i = resultUsers.map((u) => u.id).indexOf(user.id);
 
             expect(i).toBeGreaterThanOrEqual(0);
 
@@ -544,7 +515,7 @@ describe("useAll query", () => {
             });
 
             expect(resultUsers[i]).toMatchObject<Partial<User>>({
-                id: user.id.toString() as any,
+                id: user.id,
                 firstName: user.firstName,
                 lastName: user.lastName,
                 ...roleFields,

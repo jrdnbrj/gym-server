@@ -6,5 +6,5 @@ export class ForgotPasswordToken extends BaseEntity {
     token!: string;
 
     @Column({ unique: true })
-    userID!: number;
+    userID!: string;
 }

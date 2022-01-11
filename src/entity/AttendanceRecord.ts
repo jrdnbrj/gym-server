@@ -1,11 +1,17 @@
-import { Entity, PrimaryGeneratedColumn, ManyToOne, Column } from "typeorm";
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    ManyToOne,
+    Column,
+    BaseEntity,
+} from "typeorm";
 import { ObjectType, Field } from "type-graphql";
 import { WeekSchedule } from "./WeekSchedule";
 
 @ObjectType()
 export class AttendanceUnit {
     @Field()
-    studentID!: number;
+    studentID!: string;
 
     @Field()
     attended!: boolean;
@@ -13,7 +19,7 @@ export class AttendanceUnit {
 
 @Entity()
 @ObjectType()
-export class AttendanceRecord {
+export class AttendanceRecord extends BaseEntity {
     @PrimaryGeneratedColumn()
     id!: number;
 
@@ -27,7 +33,7 @@ export class AttendanceRecord {
 
     // Weird: https://stackoverflow.com/questions/59437390/typeorm-jsonb-array-column
     @Column({ type: "jsonb", array: false, default: () => "'[]'" })
-    attendance!: Array<{ studentID: number; attended: boolean }>;
+    attendance!: Array<{ studentID: string; attended: boolean }>;
 
     @Field(() => [AttendanceUnit], { name: "attendance" })
     attendanceField!: AttendanceUnit[];

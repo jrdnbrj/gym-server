@@ -4,7 +4,6 @@ import {
     Arg,
     Mutation,
     ID,
-    Ctx,
     UseMiddleware,
     ResolverInterface,
     Root,
@@ -13,7 +12,6 @@ import {
 import { WeekSchedule } from "../entity/WeekSchedule";
 import { Weekday } from "../enum/Weekday";
 import { ApolloError } from "apollo-server-core";
-import { RegularContext } from "../types/RegularContext";
 import { User } from "../entity/User";
 import { DateTime } from "luxon";
 import RequireAdmin from "../gql_middleware/RequireAdmin";
@@ -29,11 +27,9 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
     // TODO: get available WeekSchedules.
 
     @Query(() => [WeekSchedule])
-    async weekScheduleAll(
-        @Ctx() { db }: RegularContext
-    ): Promise<WeekSchedule[]> {
+    async weekScheduleAll(): Promise<WeekSchedule[]> {
         // TODO: Fix: relations [instructor] shouldn't be required with eager: true.
-        return await db.manager.find(WeekSchedule, {
+        return await WeekSchedule.find({
             relations: ["instructor"],
         });
     }
@@ -46,16 +42,15 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
     async weekScheduleCreate(
         @Arg("weekDays", () => [Weekday]) weekdays: Weekday[],
         @Arg("startDate", () => String) startDateString: string,
-        @Arg("instructorID", () => ID) instructorID: number,
-        @Arg("type", () => String) workoutType: string,
-        @Ctx() { db }: RegularContext
+        @Arg("instructorID", () => ID) instructorID: string,
+        @Arg("type", () => String) workoutType: string
     ): Promise<WeekSchedule> {
         const startDate = DateTime.fromISO(startDateString);
         if (!startDate.isValid) {
             throw new ApolloError(startDate.invalidExplanation!);
         }
 
-        const instructorUser = await db.manager.findOne(User, instructorID, {
+        const instructorUser = await User.findOne(instructorID, {
             relations: ["instructor.weekSchedules"],
         });
         if (!instructorUser) {
@@ -76,7 +71,7 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
             await WorkoutType.findOneOrFail(workoutType)
         );
 
-        weekSchedule = await db.manager.save(weekSchedule);
+        weekSchedule = await weekSchedule.save();
 
         // TODO: return updated instructor field.
         return weekSchedule;
@@ -85,19 +80,15 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
     @Mutation(() => WeekSchedule)
     async weekScheduleAddStudent(
         @Arg("weekScheduleID", () => ID) weekScheduleID: number,
-        @Arg("clientID", () => ID) clientID: number,
-        @Ctx() { db }: RegularContext
+        @Arg("clientID", () => ID) clientID: string
     ): Promise<WeekSchedule> {
         // TODO: don't allow same user to register twice.
-        let weekSchedule = await db.manager.findOne(
-            WeekSchedule,
-            weekScheduleID
-        );
+        let weekSchedule = await WeekSchedule.findOne(weekScheduleID);
         if (!weekSchedule) throw new ApolloError("WeekSchedule not found.");
         if (weekSchedule.quotas == 0)
             throw new ApolloError("WeekSchedule already full.");
 
-        let clientUser = await db.manager.findOne(User, clientID);
+        let clientUser = await User.findOne(clientID);
         if (!clientUser) throw new ApolloError("Client not found.");
         if (!clientUser.isClient)
             throw new ApolloError(
@@ -106,10 +97,10 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
 
         weekSchedule.students.push(clientUser);
         weekSchedule.quotas -= 1;
-        weekSchedule = await db.manager.save(weekSchedule);
+        weekSchedule = await weekSchedule.save();
 
         clientUser.client.weekScheduleIDs.push(weekSchedule.id);
-        await db.manager.save(clientUser);
+        await clientUser.save();
 
         return weekSchedule;
     }
@@ -117,19 +108,15 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
     @Mutation(() => Boolean)
     @UseMiddleware(RequireAdmin)
     async weekScheduleRemove(
-        @Arg("weekScheduleID") weekScheduleID: number,
-        @Ctx() { db }: RegularContext
+        @Arg("weekScheduleID") weekScheduleID: number
     ): Promise<boolean> {
-        const weekSchedule = await db.manager.findOne(
-            WeekSchedule,
-            weekScheduleID
-        );
+        const weekSchedule = await WeekSchedule.findOne(weekScheduleID);
 
         if (!weekSchedule) {
             throw new ApolloError("WeekSchedule with given ID doesn't exist.");
         }
 
-        await db.manager.remove(weekSchedule);
+        await weekSchedule.remove();
 
         return true;
     }

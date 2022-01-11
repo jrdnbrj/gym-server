@@ -23,7 +23,7 @@ import Admin from "../entity/Admin";
 
 declare module "express-session" {
     interface SessionData {
-        userId: number;
+        userId: string;
     }
 }
 
@@ -50,7 +50,7 @@ export class UserResolver implements ResolverInterface<User> {
     // TODO: use @Info to select realtion fields.
     @Query(() => User, { nullable: true })
     async userByID(
-        @Arg("userID", () => ID) userID: number
+        @Arg("userID", () => ID) userID: string
     ): Promise<User | null> {
         const user = await User.findOne(userID, {
             relations: ["instructor.weekSchedules"],
@@ -130,11 +130,9 @@ export class UserResolver implements ResolverInterface<User> {
         @Arg("password") password: string,
         @Arg("isClient") isClient: boolean,
         @Arg("isInstructor") isInstructor: boolean,
-        @Arg("isAdmin") isAdmin: boolean,
-        @Ctx()
-        { db }: RegularContext
+        @Arg("isAdmin") isAdmin: boolean
     ): Promise<User> {
-        const existsUser = !!(await db.manager.findOne(User, { email }));
+        const existsUser = !!(await User.findOne({ email }));
 
         if (existsUser) {
             throw new ApolloError("Email ya existe.");
@@ -157,7 +155,7 @@ export class UserResolver implements ResolverInterface<User> {
             user.admin = new Admin();
         }
 
-        user = await db.manager.save(user);
+        user = await user.save();
 
         // TODO: login automatically after successful register?
         return user;
@@ -168,20 +166,20 @@ export class UserResolver implements ResolverInterface<User> {
     @Mutation(() => String)
     async userForgotPassword(
         @Arg("userEmail", () => String) userEmail: string,
-        @Ctx() { db, transporter }: RegularContext
+        @Ctx() { transporter }: RegularContext
     ): Promise<string> {
-        const user = await db.manager.findOne(User, { email: userEmail });
+        const user = await User.findOne({ email: userEmail });
         if (!user) {
             throw new ApolloError("User not found.");
         }
 
         // If token already exists, then it is deleted and another one is generated.
         if (
-            !!(await db.manager.findOne(ForgotPasswordToken, {
+            !!(await ForgotPasswordToken.findOne({
                 userID: user.id,
             }))
         ) {
-            await db.manager.delete(ForgotPasswordToken, { userID: user.id });
+            await ForgotPasswordToken.delete({ userID: user.id });
         }
 
         const tokenString = randomBytes(32).toString("hex");
@@ -190,7 +188,7 @@ export class UserResolver implements ResolverInterface<User> {
         token.token = tokenString;
         token.userID = user.id;
 
-        token = await db.manager.save(token);
+        token = await token.save();
 
         const url = `http://localhost:3000/password/${token.token}`;
 
@@ -210,25 +208,21 @@ export class UserResolver implements ResolverInterface<User> {
     @Mutation(() => Boolean)
     async userChangePassword(
         @Arg("token") tokenString: string,
-        @Arg("newPassword") plainPassword: string,
-        @Ctx() { db }: RegularContext
+        @Arg("newPassword") plainPassword: string
     ): Promise<boolean> {
-        const token = await db.manager.findOne(
-            ForgotPasswordToken,
-            tokenString
-        );
+        const token = await ForgotPasswordToken.findOne(tokenString);
         // TODO: Invalidate all user's sessions on changePassword.
 
         if (!token) throw new ApolloError("Token doesn't exist.");
 
         // Change password.
-        const user = await db.manager.findOne(User, token.userID);
+        const user = await User.findOne(token.userID);
         if (!user) throw new ApolloError("User does not exist.");
 
         await user.setPassword(plainPassword);
-        await db.manager.save(user);
+        await user.save();
 
-        await db.manager.delete(ForgotPasswordToken, { token: tokenString });
+        await ForgotPasswordToken.delete({ token: tokenString });
 
         return true;
     }

@@ -5,6 +5,7 @@ import {
     Arg,
     Ctx,
     UseMiddleware,
+    ID,
 } from "type-graphql";
 import { Instructor } from "../entity/Instructor";
 import { User } from "../entity/User";
@@ -16,7 +17,7 @@ import RequireInstructor from "../gql_middleware/RequireInstructor";
 
 declare module "express-session" {
     interface SessionData {
-        userId: number;
+        userId: string;
     }
 }
 
@@ -24,10 +25,9 @@ declare module "express-session" {
 export class InstructorResolver {
     @Mutation(() => User)
     async instructorRegister(
-        @Arg("userID") userID: number,
-        @Ctx() { db }: RegularContext
+        @Arg("userID", () => ID) userID: string
     ): Promise<User> {
-        let user = await db.manager.findOne(User, userID);
+        let user = await User.findOne(userID);
 
         if (!user) {
             throw new ApolloError("User not found.");
@@ -36,14 +36,14 @@ export class InstructorResolver {
         const instructor = new Instructor();
 
         user.instructor = instructor;
-        user = await db.manager.save(user);
+        user = await user.save();
 
         return user;
     }
 
     @Query(() => [User])
-    async instructorAll(@Ctx() { db }: RegularContext): Promise<User[]> {
-        return await db.manager.find(User, {
+    async instructorAll(): Promise<User[]> {
+        return await User.find({
             where: { isInstructor: true },
         });
     }
@@ -55,13 +55,11 @@ export class InstructorResolver {
     async instructorSendEmailWeekSchedule(
         @Arg("weekScheduleID") weekScheduleID: number,
         @Arg("message") message: string,
-        @Ctx() { db, req, transporter }: RegularContext
+        @Ctx() { req, transporter }: RegularContext
     ): Promise<boolean> {
-        const instructorUser = (await db.manager.findOne(
-            User,
-            req.session.userId!,
-            { relations: ["instructor.weekSchedules"] }
-        ))!;
+        const instructorUser = (await User.findOne(req.session.userId!, {
+            relations: ["instructor.weekSchedules"],
+        }))!;
 
         const scheduleOfInstructorIndex =
             instructorUser.instructor.weekSchedules
@@ -72,17 +70,14 @@ export class InstructorResolver {
         if (scheduleOfInstructorIndex < 0)
             throw new ApolloError("WeekSchedule not taught by instructor.");
 
-        const weekSchedule = await db.manager.findOne(
-            WeekSchedule,
-            weekScheduleID
-        );
+        const weekSchedule = await WeekSchedule.findOne(weekScheduleID);
         if (!weekSchedule) {
             // Clean erroneous data.
             instructorUser.instructor.weekSchedules.splice(
                 scheduleOfInstructorIndex,
                 1
             );
-            await db.manager.save(instructorUser);
+            await instructorUser.save();
 
             throw new ApolloError("WeekSchedule does not exist.");
         }

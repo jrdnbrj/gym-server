@@ -22,12 +22,12 @@ import * as nodemailer from "nodemailer";
 
 declare module "express-session" {
     interface SessionData {
-        userId: number;
+        userId: string;
     }
 }
 
 const main = async () => {
-    const db = await createConnection(connectionOptions);
+    await createConnection(connectionOptions);
     console.log("\nDatabase connection successfull!");
 
     // Email transporter
@@ -83,7 +83,6 @@ const main = async () => {
         context: ({ req, res }): RegularContext => ({
             req,
             res,
-            db,
             transporter,
         }),
         cache: undefined,

@@ -40,7 +40,6 @@ export const gCallExpectFullPrivilegeUser = async (
 
     expect(data[operationName]).toMatchObject<Partial<User>>({
         ...user,
-        id: user.id.toString() as any,
         ...newFullPrivilegeUserFields,
     });
 
@@ -58,7 +57,6 @@ export const gCallExpectNoPrivilegeUser = async (
 
     expect(data[operationName]).toMatchObject<Partial<User>>({
         ...user,
-        id: user.id.toString() as any,
         ...newNoPrivilegeUserFields,
     });
 
