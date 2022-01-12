@@ -108,8 +108,11 @@ export class AttendanceRecordResolver
 
         const attendance: typeof record.attendance = [];
 
-        for (let student of weekSchedule.students) {
-            attendance.push({ studentID: student.id, attended: true });
+        for (let student of await weekSchedule.students) {
+            attendance.push({
+                studentID: (await student.user).id,
+                attended: true,
+            });
         }
 
         record.attendance = attendance;

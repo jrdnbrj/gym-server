@@ -1,3 +1,4 @@
+import { Client } from "../../src/entity/Client";
 import { User } from "../../src/entity/User";
 import { WeekSchedule } from "../../src/entity/WeekSchedule";
 import { WorkoutType } from "../../src/entity/WorkoutType";
@@ -39,18 +40,23 @@ export const genDbWeekSchedule = async (
     const ws = WeekSchedule.create({
         days,
         startDate,
-        students: [],
+        students: Promise.resolve([]),
     });
 
     // Optional arguments
     const { workoutType, instructor, genRandomStudents } = options;
 
     if (genRandomStudents) {
+        const randomStudents: Client[] = [];
+
         // random n in [1, 3]
         let n = Math.floor(Math.random() * 3) + 1;
         for (let i = 0; i < n; i++) {
-            ws.students.push(await genDbUser());
+            const newUser = await genDbUser({ isClient: true });
+            randomStudents.push((await newUser.client)!);
         }
+
+        ws.students = Promise.resolve(randomStudents);
     }
 
     if (workoutType) ws.workoutType = Promise.resolve(workoutType);

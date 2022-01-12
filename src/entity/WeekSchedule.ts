@@ -12,6 +12,7 @@ import { Weekday } from "../enum/Weekday";
 import { User } from "./User";
 import { WorkoutType } from "./WorkoutType";
 import { Instructor } from "./Instructor";
+import { Client } from "./Client";
 
 @ObjectType()
 @Entity()
@@ -31,10 +32,13 @@ export class WeekSchedule extends BaseEntity {
     @Column({ default: 3 })
     quotas!: number;
 
-    @Field(() => [User], { nullable: true })
-    @ManyToMany(() => User, { eager: true })
+    @ManyToMany(() => Client, (client) => client.weekSchedules)
     @JoinTable()
-    students!: User[];
+    students!: Promise<Client[]>;
+
+    /**Returns the stuendts' user objects, not the student objects themselves.*/
+    @Field(() => [User], { name: "students" })
+    _studentsField!: User[];
 
     @ManyToOne(() => Instructor, (instructor) => instructor.weekSchedules)
     instructor!: Promise<Instructor>;

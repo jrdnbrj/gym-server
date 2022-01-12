@@ -1,12 +1,13 @@
 import {
     BaseEntity,
-    Column,
     Entity,
+    ManyToMany,
     OneToOne,
     PrimaryGeneratedColumn,
 } from "typeorm";
-import { ObjectType, Field, ID } from "type-graphql";
+import { ObjectType, Field } from "type-graphql";
 import { User } from "./User";
+import { WeekSchedule } from "./WeekSchedule";
 
 @Entity()
 @ObjectType()
@@ -17,8 +18,9 @@ export class Client extends BaseEntity {
     @OneToOne(() => User, (user) => user.client)
     user!: Promise<User>;
 
-    // FIXME: this shouldn't be a column
-    @Field(() => [ID])
-    @Column("int", { array: true, default: [] })
-    weekScheduleIDs!: number[];
+    @ManyToMany(() => WeekSchedule, (ws) => ws.students)
+    weekSchedules!: Promise<WeekSchedule[]>;
+
+    @Field(() => [WeekSchedule], { name: "weekSchedules" })
+    _weekSchedulesField!: WeekSchedule[];
 }

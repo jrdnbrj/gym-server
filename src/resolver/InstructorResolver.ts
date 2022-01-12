@@ -89,7 +89,11 @@ export class InstructorResolver implements ResolverInterface<Instructor> {
             throw new ApolloError("WeekSchedule does not exist.");
         }
 
-        for (let clientUser of weekSchedule.students) {
+        const students = await weekSchedule.students;
+        const studentsUsers = await Promise.all(
+            students.map(async (s) => await s.user)
+        );
+        for (let clientUser of studentsUsers) {
             await sendEmail(transporter, {
                 to: clientUser.email,
                 subject: `Aviso de ${instructorUser.firstName} ${instructorUser.lastName}`,

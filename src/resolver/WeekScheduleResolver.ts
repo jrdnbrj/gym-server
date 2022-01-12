@@ -31,6 +31,13 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
         return await ws.workoutType;
     }
 
+    @FieldResolver()
+    async _studentsField(@Root() ws: WeekSchedule) {
+        const students = await ws.students;
+
+        return await Promise.all(students.map(async (s) => s.user));
+    }
+
     // TODO: get available WeekSchedules.
 
     @Query(() => [WeekSchedule])
@@ -99,12 +106,12 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
                 "Not enough privileges. clientID's user is not a Client."
             );
 
-        weekSchedule.students.push(clientUser);
+        const students = await weekSchedule.students;
+        students.push((await clientUser.client)!);
+
+        weekSchedule.students = Promise.resolve(students);
         weekSchedule.quotas -= 1;
         weekSchedule = await weekSchedule.save();
-
-        (await clientUser.client)!.weekScheduleIDs.push(weekSchedule.id);
-        await clientUser.save();
 
         return weekSchedule;
     }

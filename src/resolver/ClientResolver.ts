@@ -6,6 +6,9 @@ import {
     Ctx,
     UseMiddleware,
     ID,
+    ResolverInterface,
+    FieldResolver,
+    Root,
 } from "type-graphql";
 import { Client } from "../entity/Client";
 import { User } from "../entity/User";
@@ -20,8 +23,13 @@ declare module "express-session" {
     }
 }
 
-@Resolver()
-export class ClientResolver {
+@Resolver(() => Client)
+export class ClientResolver implements ResolverInterface<Client> {
+    @FieldResolver()
+    async _weekSchedulesField(@Root() client: Client) {
+        return await client.weekSchedules;
+    }
+
     @Mutation(() => User)
     async clientRegister(
         @Arg("userID", () => ID) userID: string
@@ -60,35 +68,26 @@ export class ClientResolver {
         const user = (await User.findOne(req.session.userId!))!;
 
         // Validate weekSchedule
-        let weekSchedule = await WeekSchedule.findOne(
-            { id: weekScheduleID },
-            { relations: ["students"] }
-        );
+        let weekSchedule = await WeekSchedule.findOne(weekScheduleID);
 
         if (!weekSchedule) {
             throw new ApolloError("WeekSchedule does not exist.");
         }
 
         // Delete
-        let weekScheduleInClientIndex =
-            (await user.client)!.weekScheduleIDs.indexOf(weekScheduleID);
-
-        const studentIndex = weekSchedule.students
-            .map((s) => s.id)
-            .indexOf(user.id);
+        const students = await weekSchedule.students;
+        const studentsUserIDs = await Promise.all(
+            students.map(async (s) => (await s.user).id)
+        );
+        const studentIndex = studentsUserIDs.indexOf(user.id);
 
         if (studentIndex >= 0) {
-            weekSchedule.students.splice(studentIndex, 1);
+            weekSchedule.students = Promise.resolve(
+                students.splice(studentIndex, 1)
+            );
+
             weekSchedule.quotas += 1;
             await weekSchedule.save();
-        }
-
-        if (weekScheduleInClientIndex >= 0) {
-            (await user.client)!.weekScheduleIDs.splice(
-                weekScheduleInClientIndex,
-                1
-            );
-            await user.save();
         }
 
         return true;

@@ -3,7 +3,7 @@ import { User } from "../../../entity/User";
 export const newClientFields = {
     isClient: true,
     client: {
-        weekScheduleIDs: [],
+        weekSchedules: [],
     },
 };
 

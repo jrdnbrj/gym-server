@@ -67,24 +67,25 @@ describe("weekScheduleAll query", () => {
 
             expect(foundWs).toBeDefined();
 
-            const originalWs = await WeekSchedule.findOne(foundWs!.id, {
-                relations: ["students"],
-            });
+            const students = await foundWs!.students;
+            const studentsUsers = await Promise.all(
+                students.map(async (s) => await s.user)
+            );
 
             expect(resultWs).toMatchObject({
                 workoutType: {
-                    name: (await originalWs!.workoutType).name,
-                    emoji: (await originalWs!.workoutType).emoji,
+                    name: (await foundWs!.workoutType).name,
+                    emoji: (await foundWs!.workoutType).emoji,
                 },
-                quotas: originalWs!.quotas,
-                students: originalWs!.students.map((x) => ({
+                quotas: foundWs!.quotas,
+                students: studentsUsers.map((x) => ({
                     id: x.id,
                 })),
                 instructor: {
-                    id: (await (await originalWs!.instructor).user).id,
+                    id: (await (await foundWs!.instructor).user).id,
                 },
-                days: originalWs!.days,
-                startDate: originalWs!.startDate.toISOString(),
+                days: foundWs!.days,
+                startDate: foundWs!.startDate.toISOString(),
             });
         }
     });

@@ -9,7 +9,9 @@ export const allUserFields = gql`
         password
         isClient
         client {
-            weekScheduleIDs
+            weekSchedules {
+                id
+            }
         }
         isInstructor
         instructor {
