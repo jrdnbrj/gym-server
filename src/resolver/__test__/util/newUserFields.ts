@@ -1,49 +1,49 @@
 import { User } from "../../../entity/User";
 
-export const newClientFields: Partial<User> = {
+export const newClientFields = {
     isClient: true,
     client: {
         weekScheduleIDs: [],
     },
 };
 
-export const newInstructorFields: Partial<User> = {
+export const newInstructorFields = {
     isInstructor: true,
     instructor: {
         weekSchedules: [],
     },
 };
 
-export const newAdminFields: Partial<User> = {
+export const newAdminFields = {
     isAdmin: true,
     admin: {
         _placeholder: "debugging",
     },
 };
 
-export const newFullPrivilegeUserFields: Partial<User> = {
+export const newFullPrivilegeUserFields = {
     ...newClientFields,
     ...newInstructorFields,
     ...newAdminFields,
 };
 
 // Not-roles
-export const newNonClientFields: Partial<User> = {
+export const newNonClientFields = {
     isClient: false,
-    client: null as any,
+    client: null,
 };
 
-export const newNonInstructorFields: Partial<User> = {
+export const newNonInstructorFields = {
     isInstructor: false,
-    instructor: null as any,
+    instructor: null,
 };
 
-export const newNonAdminFields: Partial<User> = {
+export const newNonAdminFields = {
     isAdmin: false,
-    admin: null as any,
+    admin: null,
 };
 
-export const newNoPrivilegeUserFields: Partial<User> = {
+export const newNoPrivilegeUserFields = {
     ...newNonClientFields,
     ...newNonInstructorFields,
     ...newNonAdminFields,

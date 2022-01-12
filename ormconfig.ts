@@ -6,7 +6,7 @@ const connectionOptions: ConnectionOptions = {
     type: "postgres",
     url: DATABASE_URL,
     synchronize: true,
-    logging: false,
+    logging: true,
     entities: [path.join("src", "entity", "*.ts")],
     migrations: [path.join("src", "migration", "*.ts")],
     subscribers: [path.join("src", "subscriber", "*.ts")],

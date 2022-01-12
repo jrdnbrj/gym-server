@@ -38,8 +38,10 @@ export const gCallExpectFullPrivilegeUser = async (
 ) => {
     const data = await gCallExpectNoErrors(operation, options);
 
-    expect(data[operationName]).toMatchObject<Partial<User>>({
-        ...user,
+    expect(data[operationName]).toMatchObject({
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
         ...newFullPrivilegeUserFields,
     });
 
@@ -55,8 +57,10 @@ export const gCallExpectNoPrivilegeUser = async (
 ) => {
     const data = await gCallExpectNoErrors(operation, options);
 
-    expect(data[operationName]).toMatchObject<Partial<User>>({
-        ...user,
+    expect(data[operationName]).toMatchObject({
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
         ...newNoPrivilegeUserFields,
     });
 

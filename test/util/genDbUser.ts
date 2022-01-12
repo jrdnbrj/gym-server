@@ -21,12 +21,9 @@ export const genDbUser = async ({
         faker.name.firstName(),
         faker.name.lastName(),
         faker.internet.email(),
-        password || faker.internet.password()
+        password || faker.internet.password(),
+        { isClient, isInstructor, isAdmin }
     );
-
-    user.isClient = isClient || false;
-    user.isInstructor = isInstructor || false;
-    user.isAdmin = isAdmin || false;
 
     return await user.save();
 };

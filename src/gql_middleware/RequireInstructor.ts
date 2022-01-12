@@ -28,8 +28,10 @@ const RequireInstructor: MiddlewareFn<RegularContext> = async (
         );
     }
 
-    if (!loggedUser.isInstructor) {
-        throw new ApolloError("Not enough privileges. User is not a Client.");
+    if (!(await loggedUser.instructor)) {
+        throw new ApolloError(
+            "Not enough privileges. User is not an Instructor."
+        );
     }
 
     return next();

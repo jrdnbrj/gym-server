@@ -1,8 +1,22 @@
 import { ObjectType, Field } from "type-graphql";
-import { Column } from "typeorm";
+import {
+    BaseEntity,
+    Column,
+    Entity,
+    OneToOne,
+    PrimaryGeneratedColumn,
+} from "typeorm";
+import { User } from "./User";
 
+@Entity()
 @ObjectType()
-class Admin {
+class Admin extends BaseEntity {
+    @PrimaryGeneratedColumn()
+    id!: number;
+
+    @OneToOne(() => User, (user) => user.admin)
+    user!: Promise<User>;
+
     @Column({ default: "debugging" })
     @Field()
     _placeholder!: string;

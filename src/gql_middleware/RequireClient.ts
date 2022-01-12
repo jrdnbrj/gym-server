@@ -28,7 +28,7 @@ const RequireClient: MiddlewareFn<RegularContext> = async (
         );
     }
 
-    if (!loggedUser.isClient) {
+    if (!(await loggedUser.client)) {
         throw new ApolloError("Not enough privileges. User is not a Client.");
     }
 

@@ -6,6 +6,9 @@ import {
     Ctx,
     UseMiddleware,
     ID,
+    FieldResolver,
+    ResolverInterface,
+    Root,
 } from "type-graphql";
 import { Instructor } from "../entity/Instructor";
 import { User } from "../entity/User";
@@ -21,8 +24,13 @@ declare module "express-session" {
     }
 }
 
-@Resolver()
-export class InstructorResolver {
+@Resolver(() => Instructor)
+export class InstructorResolver implements ResolverInterface<Instructor> {
+    @FieldResolver()
+    async _weekSchedulesField(@Root() instructor: Instructor) {
+        return await instructor.weekSchedules;
+    }
+
     @Mutation(() => User)
     async instructorRegister(
         @Arg("userID", () => ID) userID: string
@@ -33,9 +41,10 @@ export class InstructorResolver {
             throw new ApolloError("User not found.");
         }
 
-        const instructor = new Instructor();
+        if (await user.instructor)
+            throw new ApolloError("Usuario ya es un instructor.");
 
-        user.instructor = instructor;
+        user.instructor = Promise.resolve(new Instructor());
         user = await user.save();
 
         return user;
@@ -43,9 +52,9 @@ export class InstructorResolver {
 
     @Query(() => [User])
     async instructorAll(): Promise<User[]> {
-        return await User.find({
-            where: { isInstructor: true },
-        });
+        const instructors = await Instructor.find({});
+
+        return await Promise.all(instructors.map(async (i) => await i.user));
     }
 
     // TODO: Change return value
@@ -57,14 +66,12 @@ export class InstructorResolver {
         @Arg("message") message: string,
         @Ctx() { req, transporter }: RegularContext
     ): Promise<boolean> {
-        const instructorUser = (await User.findOne(req.session.userId!, {
-            relations: ["instructor.weekSchedules"],
-        }))!;
+        const instructorUser = (await User.findOne(req.session.userId!))!;
+        const instructor = (await instructorUser.instructor)!;
 
-        const scheduleOfInstructorIndex =
-            instructorUser.instructor.weekSchedules
-                .map((w) => w.id)
-                .indexOf(weekScheduleID);
+        const scheduleOfInstructorIndex = (await instructor.weekSchedules)
+            .map((w) => w.id)
+            .indexOf(weekScheduleID);
 
         // TODO: weird error here.
         if (scheduleOfInstructorIndex < 0)
@@ -73,7 +80,7 @@ export class InstructorResolver {
         const weekSchedule = await WeekSchedule.findOne(weekScheduleID);
         if (!weekSchedule) {
             // Clean erroneous data.
-            instructorUser.instructor.weekSchedules.splice(
+            (await instructor.weekSchedules).splice(
                 scheduleOfInstructorIndex,
                 1
             );

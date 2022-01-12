@@ -1,9 +1,22 @@
-import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from "typeorm";
+import {
+    BaseEntity,
+    Column,
+    Entity,
+    JoinColumn,
+    OneToOne,
+    PrimaryGeneratedColumn,
+} from "typeorm";
 import { Field, ObjectType, ID } from "type-graphql";
 import { hash } from "argon2";
 import { Client } from "./Client";
 import { Instructor } from "./Instructor";
 import Admin from "./Admin";
+
+interface IsRoleInterface {
+    isClient?: boolean;
+    isInstructor?: boolean;
+    isAdmin?: boolean;
+}
 
 @ObjectType()
 @Entity()
@@ -28,37 +41,48 @@ export class User extends BaseEntity {
     @Column()
     private password!: string;
 
-    @Field(() => Boolean)
-    @Column({ default: false })
-    isClient!: boolean;
+    @Field(() => Boolean, { name: "isClient" })
+    _isClientField!: boolean;
 
-    @Column(() => Client)
-    client!: Client;
+    @OneToOne(() => Client, (client) => client.user, {
+        nullable: true,
+        cascade: true,
+        onDelete: "SET NULL",
+    })
+    @JoinColumn()
+    client!: Promise<Client | null>;
 
     @Field(() => Client, { name: "client", nullable: true })
-    clientField!: Client | null;
+    _clientField!: Client | null;
 
-    @Field(() => Boolean)
-    @Column({ default: false })
-    isInstructor!: boolean;
+    @Field(() => Boolean, { name: "isInstructor" })
+    _isInstructorField!: boolean;
 
-    @Field(() => Instructor, { nullable: true })
-    @Column(() => Instructor)
-    instructor!: Instructor;
+    @OneToOne(() => Instructor, (instructor) => instructor.user, {
+        nullable: true,
+        cascade: true,
+        onDelete: "SET NULL",
+    })
+    @JoinColumn()
+    instructor!: Promise<Instructor | null>;
 
     @Field(() => Instructor, { name: "instructor", nullable: true })
-    instructorField!: Instructor | null;
+    _instructorField!: Instructor | null;
 
-    @Field(() => Boolean)
-    @Column({ default: false })
-    isAdmin!: boolean;
+    @Field(() => Boolean, { name: "isAdmin" })
+    _isAdminField!: boolean;
 
     @Field(() => Admin, { nullable: true })
-    @Column(() => Admin)
-    admin!: Admin;
+    @OneToOne(() => Admin, (admin) => admin.user, {
+        nullable: true,
+        cascade: true,
+        onDelete: "SET NULL",
+    })
+    @JoinColumn()
+    admin!: Promise<Admin | null>;
 
     @Field(() => Admin, { name: "admin", nullable: true })
-    adminField!: Admin | null;
+    _adminField!: Admin | null;
 
     // Getters and setters
 
@@ -76,7 +100,8 @@ export class User extends BaseEntity {
         firstName: string,
         lastName: string,
         email: string,
-        hashedPassword: string
+        hashedPassword: string,
+        roles?: IsRoleInterface
     ) {
         super();
 
@@ -84,19 +109,35 @@ export class User extends BaseEntity {
         this.lastName = lastName;
         this.email = email;
         this.password = hashedPassword;
+
+        if (roles) {
+            const { isClient, isInstructor, isAdmin } = roles;
+
+            if (isClient) this.client = Promise.resolve(new Client());
+            else this.client = Promise.resolve(null);
+
+            if (isInstructor)
+                this.instructor = Promise.resolve(new Instructor());
+            else this.instructor = Promise.resolve(null);
+
+            if (isAdmin) this.admin = Promise.resolve(new Admin());
+            else this.admin = Promise.resolve(null);
+        }
     }
 
     static async new(
         firstName: string,
         lastName: string,
         email: string,
-        plainPassword: string
+        plainPassword: string,
+        roles?: IsRoleInterface
     ): Promise<User> {
         const user = new User(
             firstName,
             lastName,
             email,
-            await hash(plainPassword)
+            await hash(plainPassword),
+            roles
         );
         return user;
     }

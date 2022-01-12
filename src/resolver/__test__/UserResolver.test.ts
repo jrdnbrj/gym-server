@@ -10,6 +10,7 @@ import { gCall } from "../../../test/util/gCall";
 import { userByIdQuery } from "./query/userByIdQuery";
 import {
     newFullPrivilegeUserFields,
+    newInstructorFields,
     newNoPrivilegeUserFields,
     newUserRoleFields,
 } from "./util/newUserFields";
@@ -27,6 +28,9 @@ import { ForgotPasswordToken } from "../../entity/ForgotPasswordToken";
 import { userChangePasswordMutation } from "./mutation/userChangePasswordMutation";
 import { userAllQuery } from "./query/userAllQuery";
 import { randomUUID } from "crypto";
+import Admin from "../../entity/Admin";
+import { Client } from "../../entity/Client";
+import { Instructor } from "../../entity/Instructor";
 
 let db: Connection;
 
@@ -54,13 +58,14 @@ describe("userRegister mutation", () => {
         });
 
         const result = data.userRegister;
-        const { password } = result;
+
         expect(result).toBeTruthy();
-        expect(result).toMatchObject<Partial<User>>({
+        expect(result).toMatchObject({
             ...user,
             ...newNoPrivilegeUserFields,
         });
 
+        const { password } = result;
         expect(await verify(password, userPassword)).toEqual(true);
 
         // Test db object
@@ -69,9 +74,9 @@ describe("userRegister mutation", () => {
         expect(dbUser).toBeDefined();
         expect(dbUser).toMatchObject<Partial<User>>({
             ...user,
-            isClient: false,
-            isInstructor: false,
-            isAdmin: false,
+            client: Promise.resolve(null),
+            instructor: Promise.resolve(null),
+            admin: Promise.resolve(null),
         });
 
         expect(await verify(dbUser!.getPassword(), userPassword));
@@ -102,7 +107,7 @@ describe("userRegister mutation", () => {
         expect(data).toBeFalsy();
 
         expect(errors!.length).toEqual(1);
-        expect(errors![0].message).toContain("Email ya existe");
+        expect(errors![0].message.toLowerCase()).toContain("email ya existe");
     });
 
     test("registering a full-privilege user", async () => {
@@ -120,24 +125,25 @@ describe("userRegister mutation", () => {
         });
 
         const result = data!.userRegister;
-        const { password } = result;
+
         expect(result).toBeTruthy();
-        expect(result).toMatchObject<Partial<User>>({
+        expect(result).toMatchObject({
             ...user,
             ...newFullPrivilegeUserFields,
         });
 
+        const { password } = result;
         expect(await verify(password, userPassword)).toEqual(true);
 
         // Test db object
-        const dbUser = await User.findOne(result.id, {
-            relations: ["instructor.weekSchedules"],
-        });
+        const dbUser = await User.findOne(result.id);
 
         expect(dbUser).toBeDefined();
         expect(dbUser).toMatchObject<Partial<User>>({
             ...user,
-            ...newFullPrivilegeUserFields,
+            client: Promise.resolve(new Client()),
+            instructor: Promise.resolve(new Instructor()),
+            admin: Promise.resolve(new Admin()),
         });
 
         expect(await verify(dbUser!.getPassword(), userPassword));
@@ -509,9 +515,9 @@ describe("useAll query", () => {
             expect(i).toBeGreaterThanOrEqual(0);
 
             const roleFields = newUserRoleFields({
-                isClient: user.isClient,
-                isInstructor: user.isInstructor,
-                isAdmin: user.isAdmin,
+                isClient: !!(await user.client),
+                isInstructor: !!(await user.instructor),
+                isAdmin: !!(await user.admin),
             });
 
             expect(resultUsers[i]).toMatchObject<Partial<User>>({

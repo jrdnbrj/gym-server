@@ -32,9 +32,12 @@ export class ClientResolver {
             throw new ApolloError("User not found.");
         }
 
+        if (await user.client)
+            throw new ApolloError("Usuario ya es un cliente.");
+
         const client = new Client();
 
-        user.client = client;
+        user.client = Promise.resolve(client);
         await user.save();
 
         return user;
@@ -68,7 +71,7 @@ export class ClientResolver {
 
         // Delete
         let weekScheduleInClientIndex =
-            user.client.weekScheduleIDs.indexOf(weekScheduleID);
+            (await user.client)!.weekScheduleIDs.indexOf(weekScheduleID);
 
         const studentIndex = weekSchedule.students
             .map((s) => s.id)
@@ -81,7 +84,10 @@ export class ClientResolver {
         }
 
         if (weekScheduleInClientIndex >= 0) {
-            user.client.weekScheduleIDs.splice(weekScheduleInClientIndex, 1);
+            (await user.client)!.weekScheduleIDs.splice(
+                weekScheduleInClientIndex,
+                1
+            );
             await user.save();
         }
 

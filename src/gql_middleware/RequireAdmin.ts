@@ -28,7 +28,7 @@ const RequireAdmin: MiddlewareFn<RegularContext> = async (
         );
     }
 
-    if (!loggedUser.isAdmin) {
+    if (!(await loggedUser.admin)) {
         throw new ApolloError("Not enough privileges.");
     }
 

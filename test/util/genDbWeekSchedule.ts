@@ -58,8 +58,12 @@ export const genDbWeekSchedule = async (
         ws.workoutType = Promise.resolve(await genDbWorkoutType());
     }
 
-    if (instructor) ws.instructor = instructor;
-    else ws.instructor = await genDbUser({ isInstructor: true });
+    if (instructor)
+        ws.instructor = Promise.resolve((await instructor.instructor)!);
+    else {
+        const newUser = await genDbUser({ isInstructor: true });
+        ws.instructor = Promise.resolve((await newUser.instructor)!);
+    }
 
     return await ws.save();
 };

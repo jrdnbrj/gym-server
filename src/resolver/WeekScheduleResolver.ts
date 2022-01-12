@@ -20,6 +20,13 @@ import { WorkoutType } from "../entity/WorkoutType";
 @Resolver(() => WeekSchedule)
 export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
     @FieldResolver()
+    async _instructorField(@Root() ws: WeekSchedule) {
+        return await (
+            await ws.instructor
+        ).user;
+    }
+
+    @FieldResolver()
     async _workoutTypeField(@Root() ws: WeekSchedule) {
         return await ws.workoutType;
     }
@@ -28,10 +35,7 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
 
     @Query(() => [WeekSchedule])
     async weekScheduleAll(): Promise<WeekSchedule[]> {
-        // TODO: Fix: relations [instructor] shouldn't be required with eager: true.
-        return await WeekSchedule.find({
-            relations: ["instructor"],
-        });
+        return await WeekSchedule.find({});
     }
 
     /**Creates a new WeekSchedule.
@@ -50,21 +54,21 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
             throw new ApolloError(startDate.invalidExplanation!);
         }
 
-        const instructorUser = await User.findOne(instructorID, {
-            relations: ["instructor.weekSchedules"],
-        });
+        const instructorUser = await User.findOne(instructorID);
         if (!instructorUser) {
             throw new ApolloError("Instructor not found.");
         }
 
-        if (!instructorUser.isInstructor) {
+        if (!(await instructorUser.instructor)) {
             throw new ApolloError(
                 "Not enough privileges. instructorID's user is not an Instructor."
             );
         }
 
         let weekSchedule = new WeekSchedule();
-        weekSchedule.instructor = instructorUser;
+        weekSchedule.instructor = Promise.resolve(
+            (await instructorUser.instructor)!
+        );
         weekSchedule.days = weekdays;
         weekSchedule.startDate = startDate.toJSDate();
         weekSchedule.workoutType = Promise.resolve(
@@ -90,7 +94,7 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
 
         let clientUser = await User.findOne(clientID);
         if (!clientUser) throw new ApolloError("Client not found.");
-        if (!clientUser.isClient)
+        if (!(await clientUser.client))
             throw new ApolloError(
                 "Not enough privileges. clientID's user is not a Client."
             );
@@ -99,7 +103,7 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
         weekSchedule.quotas -= 1;
         weekSchedule = await weekSchedule.save();
 
-        clientUser.client.weekScheduleIDs.push(weekSchedule.id);
+        (await clientUser.client)!.weekScheduleIDs.push(weekSchedule.id);
         await clientUser.save();
 
         return weekSchedule;

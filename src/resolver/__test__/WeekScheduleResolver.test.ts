@@ -80,7 +80,9 @@ describe("weekScheduleAll query", () => {
                 students: originalWs!.students.map((x) => ({
                     id: x.id,
                 })),
-                instructor: { id: originalWs!.instructor.id },
+                instructor: {
+                    id: (await (await originalWs!.instructor).user).id,
+                },
                 days: originalWs!.days,
                 startDate: originalWs!.startDate.toISOString(),
             });

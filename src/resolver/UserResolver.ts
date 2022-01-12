@@ -17,9 +17,6 @@ import { User } from "../entity/User";
 import { randomBytes } from "crypto";
 import { ForgotPasswordToken } from "../entity/ForgotPasswordToken";
 import sendEmail from "../util/sendEmail";
-import { Client } from "../entity/Client";
-import { Instructor } from "../entity/Instructor";
-import Admin from "../entity/Admin";
 
 declare module "express-session" {
     interface SessionData {
@@ -30,21 +27,33 @@ declare module "express-session" {
 @Resolver(() => User)
 export class UserResolver implements ResolverInterface<User> {
     @FieldResolver()
-    clientField(@Root() user: User) {
-        if (!user.isClient) return null;
-        return user.client;
+    async _isClientField(@Root() user: User) {
+        return !!(await user.client);
     }
 
     @FieldResolver()
-    instructorField(@Root() user: User) {
-        if (!user.isInstructor) return null;
-        return user.instructor;
+    async _clientField(@Root() user: User) {
+        return await user.client;
     }
 
     @FieldResolver()
-    adminField(@Root() user: User) {
-        if (!user.isAdmin) return null;
-        return user.admin;
+    async _isInstructorField(@Root() user: User) {
+        return !!(await user.instructor);
+    }
+
+    @FieldResolver()
+    async _instructorField(@Root() user: User) {
+        return await user.instructor;
+    }
+
+    @FieldResolver()
+    async _isAdminField(@Root() user: User) {
+        return !!(await user.admin);
+    }
+
+    @FieldResolver()
+    async _adminField(@Root() user: User) {
+        return await user.admin;
     }
 
     // TODO: use @Info to select realtion fields.
@@ -52,9 +61,7 @@ export class UserResolver implements ResolverInterface<User> {
     async userByID(
         @Arg("userID", () => ID) userID: string
     ): Promise<User | null> {
-        const user = await User.findOne(userID, {
-            relations: ["instructor.weekSchedules"],
-        });
+        const user = await User.findOne(userID);
 
         if (!user) return null;
         return user;
@@ -65,9 +72,7 @@ export class UserResolver implements ResolverInterface<User> {
         const userId = req.session.userId;
         if (!userId) return null;
 
-        const user = await User.findOne(userId, {
-            relations: ["instructor.weekSchedules"],
-        });
+        const user = await User.findOne(userId);
 
         if (!user) return null;
         return user;
@@ -83,10 +88,7 @@ export class UserResolver implements ResolverInterface<User> {
             "Email o contraseña inválida."
         );
 
-        const user = await User.findOne(
-            { email },
-            { relations: ["instructor.weekSchedules"] }
-        );
+        const user = await User.findOne({ email });
 
         // user does not exist.
         if (!user) {
@@ -138,22 +140,11 @@ export class UserResolver implements ResolverInterface<User> {
             throw new ApolloError("Email ya existe.");
         }
 
-        let user = await User.new(firstName, lastName, email, password);
-
-        if (isClient) {
-            user.isClient = true;
-            user.client = new Client();
-        }
-
-        if (isInstructor) {
-            user.isInstructor = true;
-            user.instructor = new Instructor();
-        }
-
-        if (isAdmin) {
-            user.isAdmin = true;
-            user.admin = new Admin();
-        }
+        let user = await User.new(firstName, lastName, email, password, {
+            isAdmin,
+            isClient,
+            isInstructor,
+        });
 
         user = await user.save();
 
@@ -229,8 +220,6 @@ export class UserResolver implements ResolverInterface<User> {
 
     @Query(() => [User])
     async userAll(): Promise<User[]> {
-        return await User.find({
-            relations: ["instructor.weekSchedules"],
-        });
+        return await User.find({});
     }
 }
