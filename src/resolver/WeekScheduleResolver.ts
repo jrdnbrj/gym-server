@@ -79,7 +79,7 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
         weekSchedule.days = weekdays;
         weekSchedule.startDate = startDate.toJSDate();
         weekSchedule.workoutType = Promise.resolve(
-            await WorkoutType.findOneOrFail(workoutType)
+            await WorkoutType.findOneOrFail({ name: workoutType })
         );
 
         weekSchedule = await weekSchedule.save();

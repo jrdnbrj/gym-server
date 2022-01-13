@@ -1,10 +1,13 @@
 import { Field, ObjectType } from "type-graphql";
-import { BaseEntity, Column, Entity, PrimaryColumn } from "typeorm";
+import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 @ObjectType()
 export class WorkoutType extends BaseEntity {
-    @PrimaryColumn()
+    @PrimaryGeneratedColumn()
+    id!: number;
+
+    @Column({ unique: true })
     @Field()
     name!: string;
 

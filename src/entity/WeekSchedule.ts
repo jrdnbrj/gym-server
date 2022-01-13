@@ -21,7 +21,7 @@ export class WeekSchedule extends BaseEntity {
     @PrimaryGeneratedColumn()
     id!: number;
 
-    @ManyToOne(() => WorkoutType, { onDelete: "CASCADE" })
+    @ManyToOne(() => WorkoutType, { onDelete: "RESTRICT" })
     workoutType!: Promise<WorkoutType>;
 
     @Field(() => WorkoutType, { name: "workoutType" })
