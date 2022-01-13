@@ -10,7 +10,6 @@ import { gCall } from "../../../test/util/gCall";
 import { userByIdQuery } from "./query/userByIdQuery";
 import {
     newFullPrivilegeUserFields,
-    newInstructorFields,
     newNoPrivilegeUserFields,
     newUserRoleFields,
 } from "./util/newUserFields";
