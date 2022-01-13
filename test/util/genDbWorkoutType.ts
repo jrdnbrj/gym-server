@@ -2,8 +2,10 @@ import { WorkoutType } from "../../src/entity/WorkoutType";
 import { randomEmoji } from "./randomEmoji";
 import { randomUUID } from "crypto";
 
-export const genDbWorkoutType = async (): Promise<WorkoutType> => {
-    const wType = new WorkoutType();
+export const genDbWorkoutType = async (
+    save: boolean = true
+): Promise<WorkoutType> => {
+    let wType = new WorkoutType();
 
     let name = randomUUID();
     let emoji = randomEmoji();
@@ -19,5 +21,7 @@ export const genDbWorkoutType = async (): Promise<WorkoutType> => {
     wType.name = name;
     wType.emoji = emoji;
 
-    return wType.save();
+    if (save) wType = await wType.save();
+
+    return wType;
 };

@@ -67,10 +67,7 @@ describe("workoutTypeAll query", () => {
 
 describe("workoutTypeCreate mutation", () => {
     it("should successfully create and save a new WorkoutType", async () => {
-        const newTypeInfo: Partial<WorkoutType> = {
-            name: faker.datatype.uuid(),
-            emoji: randomEmoji(),
-        };
+        const newTypeInfo: Partial<WorkoutType> = await genDbWorkoutType(false);
 
         // Query
         const data = await gCallExpectNoErrors(workoutTypeCreateMutation, {
