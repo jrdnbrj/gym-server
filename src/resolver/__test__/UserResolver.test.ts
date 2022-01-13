@@ -473,8 +473,7 @@ describe("userChangePassword mutation", () => {
 describe("useAll query", () => {
     test("userAll query with empty db", async () => {
         // Clear database
-        await db.close();
-        db = await testDb(true);
+        await User.delete({});
 
         // Query
         const data = await gCallExpectNoErrors(userAllQuery);
@@ -486,8 +485,7 @@ describe("useAll query", () => {
     /**No users have role-related data, like instructor.weekSchedules.*/
     test("userAll query with random new-users", async () => {
         // Clear database
-        await db.close();
-        db = await testDb(true);
+        await User.delete({});
 
         // Generate random new-users
         const testUsers: User[] = [];
