@@ -16,7 +16,7 @@ import { User } from "../entity/User";
 import { DateTime } from "luxon";
 import RequireAdmin from "../gql_middleware/RequireAdmin";
 import { WorkoutType } from "../entity/WorkoutType";
-import dateWithoutTime from "../util/dateWithoutTime";
+import { dateWithoutTimezone } from "../util/dateWithoutTimezone";
 
 @Resolver(() => WeekSchedule)
 export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
@@ -78,7 +78,7 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
             (await instructorUser.instructor)!
         );
         weekSchedule.days = weekdays;
-        weekSchedule.startDate = dateWithoutTime(startDate.toJSDate());
+        weekSchedule.startDate = dateWithoutTimezone(startDate.toJSDate());
         weekSchedule.workoutType = Promise.resolve(
             await WorkoutType.findOneOrFail({ name: workoutType })
         );
