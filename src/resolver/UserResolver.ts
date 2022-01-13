@@ -8,6 +8,7 @@ import {
     FieldResolver,
     Root,
     ResolverInterface,
+    Args,
 } from "type-graphql";
 import { ApolloError } from "apollo-server-core";
 import { verify } from "argon2";
@@ -17,6 +18,9 @@ import { User } from "../entity/User";
 import { randomBytes } from "crypto";
 import { ForgotPasswordToken } from "../entity/ForgotPasswordToken";
 import sendEmail from "../util/sendEmail";
+import { UserInfoInput } from "../input/UserInfoInput";
+import { getLoggedInUser } from "../util/getLoggedInUser";
+import { emailTakenError } from "../error/emailTakenError";
 
 declare module "express-session" {
     interface SessionData {
@@ -56,7 +60,6 @@ export class UserResolver implements ResolverInterface<User> {
         return await user.admin;
     }
 
-    // TODO: use @Info to select realtion fields.
     @Query(() => User, { nullable: true })
     async userByID(
         @Arg("userID", () => ID) userID: string
@@ -108,7 +111,6 @@ export class UserResolver implements ResolverInterface<User> {
         return user;
     }
 
-    // TODO: always returns true?
     /**Always returns true if successful. If there's an error, an ApolloError is thrown.*/
     @Mutation(() => Boolean)
     userLogout(@Ctx() { req }: RegularContext) {
@@ -221,5 +223,24 @@ export class UserResolver implements ResolverInterface<User> {
     @Query(() => [User])
     async userAll(): Promise<User[]> {
         return await User.find({});
+    }
+
+    @Mutation(() => User)
+    async userEditInfo(
+        @Args() { firstName, lastName, email }: UserInfoInput,
+        @Ctx() { req }: RegularContext
+    ): Promise<User> {
+        const user = await getLoggedInUser(req);
+
+        if (firstName) user.firstName = firstName;
+
+        if (lastName) user.lastName = lastName;
+
+        if (email) {
+            if (await User.findOne({ email })) throw emailTakenError;
+            user.email = email;
+        }
+
+        return user.save();
     }
 }
