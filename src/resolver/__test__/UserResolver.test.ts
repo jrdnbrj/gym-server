@@ -30,6 +30,8 @@ import { randomUUID } from "crypto";
 import Admin from "../../entity/Admin";
 import { Client } from "../../entity/Client";
 import { Instructor } from "../../entity/Instructor";
+import { userEditInfoMutation } from "./mutation/userEditInfoMutation";
+import { UserInfoInput } from "../../input/UserInfoInput";
 
 let db: Connection;
 
@@ -469,7 +471,7 @@ describe("userChangePassword mutation", () => {
     });
 });
 
-describe("useAll query", () => {
+describe("userAll query", () => {
     test("userAll query with empty db", async () => {
         // Clear database
         await User.delete({});
@@ -524,5 +526,51 @@ describe("useAll query", () => {
                 ...roleFields,
             });
         }
+    });
+});
+
+describe("userEditInfo mutation", () => {
+    test("should change all 3 user fields", async () => {
+        const user = await genDbUser();
+
+        const firstName = faker.name.firstName();
+        const lastName = faker.name.lastName();
+
+        let email = faker.internet.email();
+        while (await User.findOne({ email })) {
+            email = faker.internet.email();
+        }
+
+        const expectedUser: User = User.create({
+            firstName,
+            lastName,
+            email,
+        });
+
+        // Simulate req
+        const req = genMockReq();
+        req.session.userId = user.id;
+
+        // Mutation
+        const variableValues: UserInfoInput = {
+            firstName,
+            lastName,
+            email,
+        };
+
+        await gCallExpectNoPrivilegeUser(
+            userEditInfoMutation,
+            "userEditInfo",
+            expectedUser,
+            { variableValues, context: { req } }
+        );
+
+        // Assert db
+        const foundUser = await User.findOne(user.id);
+
+        expect(foundUser).toBeDefined();
+        expect(foundUser!.firstName).toEqual(firstName);
+        expect(foundUser!.lastName).toEqual(lastName);
+        expect(foundUser!.email).toEqual(email);
     });
 });
