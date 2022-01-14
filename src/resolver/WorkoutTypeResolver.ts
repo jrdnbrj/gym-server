@@ -65,7 +65,7 @@ export class WorkoutTypeResolver {
             wt.name = newName;
         }
 
-        if (newEmoji) {
+        if (newEmoji && wt.emoji !== newEmoji) {
             if (await WorkoutType.findOne({ emoji: newEmoji }))
                 throw workoutTypeEmojiTakenError;
 
