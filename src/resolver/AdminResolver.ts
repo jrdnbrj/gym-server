@@ -26,8 +26,8 @@ export class AdminResolver {
     @UseMiddleware(RequireAdmin)
     async adminUserRoles(
         @Arg("userID", () => ID) userID: string,
-        @Arg("isClient") isClient: boolean,
-        @Arg("isInstructor") isInstructor: boolean,
+        @Arg("isClient", { nullable: true }) isClient?: boolean,
+        @Arg("isInstructor", { nullable: true }) isInstructor?: boolean,
         @Arg("isAdmin", { nullable: true }) isAdmin?: boolean
     ): Promise<User> {
         // Change privileges
