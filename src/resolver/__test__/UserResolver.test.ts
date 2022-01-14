@@ -573,4 +573,27 @@ describe("userEditInfo mutation", () => {
         expect(foundUser!.lastName).toEqual(lastName);
         expect(foundUser!.email).toEqual(email);
     });
+
+    test("should not modify user when not given any new values", async () => {
+        const user = await genDbUser();
+
+        // Simulate req
+        const req = genMockReq();
+        req.session.userId = user.id;
+
+        await gCallExpectNoPrivilegeUser(
+            userEditInfoMutation,
+            "userEditInfo",
+            user,
+            { context: { req } }
+        );
+
+        // Assert db
+        const foundUser = await User.findOne(user.id);
+
+        expect(foundUser).toBeDefined();
+        expect(foundUser!.firstName).toEqual(user.firstName);
+        expect(foundUser!.lastName).toEqual(user.lastName);
+        expect(foundUser!.email).toEqual(user.email);
+    });
 });
