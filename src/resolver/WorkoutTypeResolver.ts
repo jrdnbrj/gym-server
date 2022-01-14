@@ -58,7 +58,7 @@ export class WorkoutTypeResolver {
 
         if (!wt) throw workoutTypeNotFoundError;
 
-        if (newName) {
+        if (newName && wt.name !== newName) {
             if (await WorkoutType.findOne({ name: newName }))
                 throw workoutTypeNameTakenError;
 
