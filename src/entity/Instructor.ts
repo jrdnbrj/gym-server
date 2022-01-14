@@ -15,7 +15,7 @@ export class Instructor extends BaseEntity {
     @PrimaryGeneratedColumn()
     id!: number;
 
-    @OneToOne(() => User, (user) => user.instructor)
+    @OneToOne(() => User, (user) => user.instructor, { onDelete: "CASCADE" })
     user!: Promise<User>;
 
     @OneToMany(() => WeekSchedule, (weekSchedule) => weekSchedule.instructor)

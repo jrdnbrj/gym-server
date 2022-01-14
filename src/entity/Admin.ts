@@ -14,7 +14,7 @@ class Admin extends BaseEntity {
     @PrimaryGeneratedColumn()
     id!: number;
 
-    @OneToOne(() => User, (user) => user.admin)
+    @OneToOne(() => User, (user) => user.admin, { onDelete: "CASCADE" })
     user!: Promise<User>;
 
     @Column({ default: "debugging" })

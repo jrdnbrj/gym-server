@@ -15,7 +15,7 @@ export class Client extends BaseEntity {
     @PrimaryGeneratedColumn()
     id!: number;
 
-    @OneToOne(() => User, (user) => user.client)
+    @OneToOne(() => User, (user) => user.client, { onDelete: "CASCADE" })
     user!: Promise<User>;
 
     @ManyToMany(() => WeekSchedule, (ws) => ws.students)
