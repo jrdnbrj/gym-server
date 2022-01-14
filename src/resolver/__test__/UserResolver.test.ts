@@ -32,6 +32,7 @@ import { Client } from "../../entity/Client";
 import { Instructor } from "../../entity/Instructor";
 import { userEditInfoMutation } from "./mutation/userEditInfoMutation";
 import { UserInfoInput } from "../../input/UserInfoInput";
+import { emailTakenError } from "../../error/emailTakenError";
 
 let db: Connection;
 
@@ -595,5 +596,38 @@ describe("userEditInfo mutation", () => {
         expect(foundUser!.firstName).toEqual(user.firstName);
         expect(foundUser!.lastName).toEqual(user.lastName);
         expect(foundUser!.email).toEqual(user.email);
+    });
+
+    test("should error when given a taken newEmail", async () => {
+        const constUser = await genDbUser();
+        const mutUser = await genDbUser();
+
+        // Simulate req
+        const req = genMockReq();
+        req.session.userId = mutUser.id;
+
+        const variableValues: UserInfoInput = {
+            email: constUser.email,
+        };
+
+        const { data, errors } = await gCall({
+            source: userEditInfoMutation.loc!.source,
+            variableValues,
+            contextValue: { req },
+        });
+
+        expect(data).toBeFalsy();
+        expect(errors).toBeDefined();
+
+        expect(errors!.length).toEqual(1);
+        expect(errors![0].message).toEqual(emailTakenError.message);
+
+        // Assert user hasn't changed.
+        const foundUser = await User.findOne(mutUser.id);
+
+        expect(foundUser).toBeDefined();
+        expect(foundUser!.firstName).toEqual(mutUser.firstName);
+        expect(foundUser!.lastName).toEqual(mutUser.lastName);
+        expect(foundUser!.email).toEqual(mutUser.email);
     });
 });

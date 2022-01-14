@@ -17,10 +17,14 @@ export const genDbUser = async ({
     isAdmin,
     password,
 }: GenDbUserOptions = {}): Promise<User> => {
+    let email = faker.internet.email();
+
+    while (await User.findOne({ email })) email = faker.internet.email();
+
     let user = await User.new(
         faker.name.firstName(),
         faker.name.lastName(),
-        faker.internet.email(),
+        email,
         password || faker.internet.password(),
         { isClient, isInstructor, isAdmin }
     );
