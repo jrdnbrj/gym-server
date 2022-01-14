@@ -11,6 +11,16 @@ import { hash } from "argon2";
 import { Client } from "./Client";
 import { Instructor } from "./Instructor";
 import Admin from "./Admin";
+import { WeekSchedule } from "./WeekSchedule";
+import { ApolloError } from "apollo-server-core";
+
+export const instructorReferencedError = new ApolloError(
+    "Instructor tiene clases asignadas. Elimine estas clases primero."
+);
+
+export const userNotInstructorError = new ApolloError(
+    "Usuario no es un instructor."
+);
 
 interface IsRoleInterface {
     isClient?: boolean;
@@ -140,5 +150,19 @@ export class User extends BaseEntity {
             roles
         );
         return user;
+    }
+
+    async deleteInstructorRole() {
+        const instructor = await this.instructor;
+        if (!instructor) throw userNotInstructorError;
+
+        const refWs = await WeekSchedule.find({
+            where: { instructor },
+        });
+
+        if (refWs.length > 0) throw instructorReferencedError;
+
+        await instructor.remove();
+        await this.reload();
     }
 }

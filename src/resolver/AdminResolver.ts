@@ -58,9 +58,7 @@ export class AdminResolver {
             }
 
             if (!isInstructor) {
-                if (currentInst) await currentInst.remove();
-
-                user.instructor = Promise.resolve(null);
+                await user.deleteInstructorRole();
             }
         }
 
