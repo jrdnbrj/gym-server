@@ -40,7 +40,9 @@ export class WeekSchedule extends BaseEntity {
     @Field(() => [User], { name: "students" })
     _studentsField!: User[];
 
-    @ManyToOne(() => Instructor, (instructor) => instructor.weekSchedules)
+    @ManyToOne(() => Instructor, (instructor) => instructor.weekSchedules, {
+        onDelete: "RESTRICT",
+    })
     instructor!: Promise<Instructor>;
 
     /**Returns the instructor's user object, not the instructor object itself.*/
