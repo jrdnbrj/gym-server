@@ -236,7 +236,7 @@ export class UserResolver implements ResolverInterface<User> {
 
         if (lastName) user.lastName = lastName;
 
-        if (email) {
+        if (email && email !== user.email) {
             if (await User.findOne({ email })) throw emailTakenError;
             user.email = email;
         }
