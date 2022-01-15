@@ -4,6 +4,7 @@ import { testDb } from "../../../test/testDb";
 import { genDbUser } from "../../../test/util/genDbUser";
 import { genMockReq } from "../../../test/util/genMockReq";
 import { User } from "../../entity/User";
+import { notEnoughPrivilegesError } from "../../error/notEnoughPrivilegesError";
 import { notLoggedInError } from "../../error/notLoggedInError";
 import { userDoesNotExistError } from "../../error/userDoesNotExistError";
 import { adminUserRolesMutation } from "./mutation/adminUserRolesMutation";
@@ -143,7 +144,40 @@ describe("adminUserRoles mutation", () => {
         expect(await foundUser!.admin).toBeDefined();
     });
 
-    it.todo("should error when not logged in as an admin)");
+    it("should error when not logged in as an admin)", async () => {
+        const nonAdmin = await genDbUser();
+
+        const req = genMockReq();
+        req.session.userId = nonAdmin.id;
+
+        const user = await genDbUser({
+            isClient: true,
+            isInstructor: true,
+            isAdmin: true,
+        });
+
+        await gCallExpectOneError(
+            adminUserRolesMutation,
+            notEnoughPrivilegesError.message,
+            {
+                variableValues: {
+                    userID: user.id,
+                    isClient: false,
+                    isInstructor: false,
+                    isAdmin: false,
+                },
+                context: { req },
+            }
+        );
+
+        // Test db
+        const foundUser = await User.findOne(user.id);
+        expect(foundUser).toBeDefined();
+
+        expect(await foundUser!.client).toBeDefined();
+        expect(await foundUser!.instructor).toBeDefined();
+        expect(await foundUser!.admin).toBeDefined();
+    });
 
     it.todo("should error user's instructor has assigned schedules");
 });
