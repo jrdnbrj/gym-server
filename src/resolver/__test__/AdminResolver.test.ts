@@ -1,12 +1,15 @@
+import { randomUUID } from "crypto";
 import { getConnection } from "typeorm";
 import { testDb } from "../../../test/testDb";
 import { genDbUser } from "../../../test/util/genDbUser";
 import { genMockReq } from "../../../test/util/genMockReq";
 import { User } from "../../entity/User";
+import { userDoesNotExistError } from "../../error/userDoesNotExistError";
 import { adminUserRolesMutation } from "./mutation/adminUserRolesMutation";
 import {
     gCallExpectFullPrivilegeUser,
     gCallExpectNoPrivilegeUser,
+    gCallExpectOneError,
 } from "./util/gCallExpect";
 
 beforeAll(async () => {
@@ -85,4 +88,28 @@ describe("adminUserRoles mutation", () => {
         expect(await foundUser!.instructor).toEqual(null);
         expect(await foundUser!.admin).toEqual(null);
     });
+
+    it("should throw an error given an wrong userID", async () => {
+        const admin = await genDbUser({ isAdmin: true });
+
+        const req = genMockReq();
+        req.session.userId = admin.id;
+
+        let wrongUserID = randomUUID();
+        while (await User.findOne(wrongUserID)) wrongUserID = randomUUID();
+
+        await gCallExpectOneError(
+            adminUserRolesMutation,
+            userDoesNotExistError.message,
+            {
+                variableValues: {
+                    userID: wrongUserID,
+                },
+                context: { req },
+            }
+        );
+    });
+
+    it.todo("should error when not logged in as an admin");
+    it.todo("should error user's instructor has assigned schedules");
 });

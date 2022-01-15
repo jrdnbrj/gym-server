@@ -7,11 +7,11 @@ import {
     ID,
 } from "type-graphql";
 import { User } from "../entity/User";
-import { ApolloError } from "apollo-server-core";
 import RequireAdmin from "../gql_middleware/RequireAdmin";
 import Admin from "../entity/Admin";
 import { Client } from "../entity/Client";
 import { Instructor } from "../entity/Instructor";
+import { userDoesNotExistError } from "../error/userDoesNotExistError";
 
 @Resolver()
 export class AdminResolver {
@@ -33,7 +33,7 @@ export class AdminResolver {
         // Change privileges
         let user = await User.findOne(userID);
         if (!user) {
-            throw new ApolloError("User does not exist.");
+            throw userDoesNotExistError;
         }
 
         if (isClient !== undefined && isClient !== null) {

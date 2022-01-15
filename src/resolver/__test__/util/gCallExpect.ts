@@ -66,3 +66,24 @@ export const gCallExpectNoPrivilegeUser = async (
 
     return data;
 };
+
+/**Calls an operation using gCall and expects exactly one error with a given message. Returns an `error` object.*/
+export const gCallExpectOneError = async (
+    operation: DocumentNode,
+    errorMessage: string,
+    { context, variableValues }: gCallExpectOptions = {}
+) => {
+    const { data, errors } = await gCall({
+        source: operation.loc!.source,
+        contextValue: context,
+        variableValues,
+    });
+
+    expect(data).toBeFalsy();
+    expect(errors).toBeTruthy();
+
+    expect(errors!.length).toEqual(1);
+    expect(errors![0].message).toEqual(errorMessage);
+
+    return errors![0];
+};
