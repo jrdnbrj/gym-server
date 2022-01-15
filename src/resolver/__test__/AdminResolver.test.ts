@@ -2,8 +2,9 @@ import { randomUUID } from "crypto";
 import { getConnection } from "typeorm";
 import { testDb } from "../../../test/testDb";
 import { genDbUser } from "../../../test/util/genDbUser";
+import { genDbWeekSchedule } from "../../../test/util/genDbWeekSchedule";
 import { genMockReq } from "../../../test/util/genMockReq";
-import { User } from "../../entity/User";
+import { instructorReferencedError, User } from "../../entity/User";
 import { notEnoughPrivilegesError } from "../../error/notEnoughPrivilegesError";
 import { notLoggedInError } from "../../error/notLoggedInError";
 import { userDoesNotExistError } from "../../error/userDoesNotExistError";
@@ -179,5 +180,39 @@ describe("adminUserRoles mutation", () => {
         expect(await foundUser!.admin).toBeDefined();
     });
 
-    it.todo("should error user's instructor has assigned schedules");
+    it("should error if user's instructor has assigned schedules", async () => {
+        const admin = await genDbUser({ isAdmin: true });
+
+        const req = genMockReq();
+        req.session.userId = admin.id;
+
+        // Generate Instructor
+        const ws = await genDbWeekSchedule();
+
+        const user = await genDbUser({
+            isInstructor: true,
+        });
+
+        const instructor = (await user.instructor)!;
+        instructor.weekSchedules = Promise.resolve([ws]);
+        await instructor.save();
+
+        await gCallExpectOneError(
+            adminUserRolesMutation,
+            instructorReferencedError.message,
+            {
+                variableValues: {
+                    userID: user.id,
+                    isInstructor: false,
+                },
+                context: { req },
+            }
+        );
+
+        // Test db
+        const foundUser = await User.findOne(user.id);
+        expect(foundUser).toBeDefined();
+
+        expect(await foundUser!.instructor).toBeDefined();
+    });
 });
