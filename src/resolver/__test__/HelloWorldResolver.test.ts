@@ -1,16 +1,14 @@
 import gql from "graphql-tag";
-import { Connection } from "typeorm";
+import { getConnection } from "typeorm";
 import { testDb } from "../../../test/testDb";
 import { gCall } from "../../../test/util/gCall";
 
-let db: Connection;
-
 beforeAll(async () => {
-    db = await testDb(false);
+    await testDb(false);
 });
 
 afterAll(async () => {
-    await db.close();
+    await getConnection().close();
 });
 
 describe("HelloWorldResolver tests", () => {

@@ -1,7 +1,7 @@
 import { createConnection } from "typeorm";
 
-export const testDb = (drop: boolean = false) => {
-    return createConnection({
+export const testDb = async (drop: boolean = false) => {
+    return await createConnection({
         type: "postgres",
         host: "test-db",
         username: "postgres",

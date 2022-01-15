@@ -1,4 +1,4 @@
-import { Connection } from "typeorm";
+import { Connection, getConnection } from "typeorm";
 import { testDb } from "../../../test/testDb";
 import { userRegisterMutation } from "./mutation/userRegisterMutation";
 import * as faker from "faker";
@@ -34,14 +34,12 @@ import { userEditInfoMutation } from "./mutation/userEditInfoMutation";
 import { UserInfoInput } from "../../input/UserInfoInput";
 import { emailTakenError } from "../../error/emailTakenError";
 
-let db: Connection;
-
 beforeAll(async () => {
-    db = await testDb(false);
+    await testDb(false);
 });
 
 afterAll(async () => {
-    await db.close();
+    await getConnection().close();
 });
 
 describe("userRegister mutation", () => {

@@ -1,4 +1,4 @@
-import { Connection } from "typeorm";
+import { Connection, getConnection } from "typeorm";
 import { testDb } from "../../../test/testDb";
 import { WeekSchedule } from "../../entity/WeekSchedule";
 import { gCallExpectNoErrors } from "./util/gCallExpect";
@@ -7,14 +7,12 @@ import { User } from "../../entity/User";
 import { genDbUser } from "../../../test/util/genDbUser";
 import { genDbWeekSchedule } from "../../../test/util/genDbWeekSchedule";
 
-let db: Connection;
-
 beforeAll(async () => {
-    db = await testDb(false);
+    await testDb(false);
 });
 
 afterAll(async () => {
-    await db.close();
+    await getConnection().close();
 });
 
 describe("weekScheduleAll query", () => {

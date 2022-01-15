@@ -1,4 +1,4 @@
-import { Connection } from "typeorm";
+import { Connection, getConnection } from "typeorm";
 import { testDb } from "../../../test/testDb";
 import { WorkoutType } from "../../entity/WorkoutType";
 import { workoutTypeAllQuery } from "./query/workoutTypeAllQuery";
@@ -21,14 +21,12 @@ import { workoutTypeDeleteMutation } from "./mutation/workoutTypeDeleteMutation"
 import { genDbWeekSchedule } from "../../../test/util/genDbWeekSchedule";
 import { WeekSchedule } from "../../entity/WeekSchedule";
 
-let db: Connection;
-
 beforeAll(async () => {
-    db = await testDb(false);
+    await testDb(false);
 });
 
 afterAll(async () => {
-    await db.close();
+    await getConnection().close();
 });
 
 describe("workoutTypeAll query", () => {
@@ -46,8 +44,8 @@ describe("workoutTypeAll query", () => {
 
         const testTypes: WorkoutType[] = [];
 
-        // Random n between 50 and 100.
-        const n = Math.random() * 50 + 50;
+        // Random n between 25 and 50.
+        const n = Math.random() * 25 + 25;
         for (let i = 0; i < n; i++) {
             testTypes.push(await genDbWorkoutType());
         }
