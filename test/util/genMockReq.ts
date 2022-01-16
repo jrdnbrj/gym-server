@@ -1,4 +1,5 @@
 import { getMockReq } from "@jest-mock/express";
+import { genDbUser } from "./genDbUser";
 
 export const genMockReq = () => {
     return getMockReq({
@@ -9,4 +10,13 @@ export const genMockReq = () => {
             }),
         },
     });
+};
+
+export const genMockReqAsAdmin = async () => {
+    const admin = await genDbUser({ isAdmin: true });
+
+    const req = genMockReq();
+    req.session.userId = admin.id;
+
+    return req;
 };

@@ -1,4 +1,4 @@
-import { Connection, getConnection } from "typeorm";
+import { getConnection } from "typeorm";
 import { testDb } from "../../../test/testDb";
 import { WeekSchedule } from "../../entity/WeekSchedule";
 import { gCallExpectNoErrors } from "./util/gCallExpect";
@@ -6,6 +6,8 @@ import { weekScheduleAllQuery } from "./query/weekScheduleAllQuery";
 import { User } from "../../entity/User";
 import { genDbUser } from "../../../test/util/genDbUser";
 import { genDbWeekSchedule } from "../../../test/util/genDbWeekSchedule";
+import { weekScheduleRemove } from "./mutation/weekScheduleRemove";
+import { genMockReqAsAdmin } from "../../../test/util/genMockReq";
 
 beforeAll(async () => {
     await testDb(false);
@@ -91,4 +93,21 @@ describe("weekScheduleAll query", () => {
 
 test.todo("weekScheduleCreate mutation tests");
 test.todo("weekScheduleAddStudent mutation tests");
-test.todo("weekScheduleRemove mutation tests");
+
+describe("weekScheduleRemove mutation", () => {
+    test("successfully removing a weekSchedule", async () => {
+        const req = await genMockReqAsAdmin();
+        const ws = await genDbWeekSchedule();
+
+        const data = await gCallExpectNoErrors(weekScheduleRemove, {
+            context: { req },
+            variableValues: { weekScheduleID: ws.id },
+        });
+
+        expect(data.weekScheduleRemove).toEqual(true);
+
+        // Assert db
+        const foundWs = await WeekSchedule.findOne(ws.id);
+        expect(foundWs).toBeUndefined();
+    });
+});

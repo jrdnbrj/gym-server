@@ -124,8 +124,10 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
     @Mutation(() => Boolean)
     @UseMiddleware(RequireAdmin)
     async weekScheduleRemove(
-        @Arg("weekScheduleID") weekScheduleID: number
+        @Arg("weekScheduleID", () => ID) weekScheduleIDStr: string
     ): Promise<boolean> {
+        const weekScheduleID = Number.parseInt(weekScheduleIDStr);
+
         const weekSchedule = await WeekSchedule.findOne(weekScheduleID);
 
         if (!weekSchedule) {
