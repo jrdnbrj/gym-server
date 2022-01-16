@@ -88,3 +88,7 @@ describe("weekScheduleAll query", () => {
         }
     });
 });
+
+test.todo("weekScheduleCreate mutation tests");
+test.todo("weekScheduleAddStudent mutation tests");
+test.todo("weekScheduleRemove mutation tests");
