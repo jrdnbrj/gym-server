@@ -18,6 +18,10 @@ import RequireAdmin from "../gql_middleware/RequireAdmin";
 import { WorkoutType } from "../entity/WorkoutType";
 import { dateWithoutTimezone } from "../util/dateWithoutTimezone";
 
+const weekScheduleHasStudentsError = new ApolloError(
+    "Clase tiene estudiantes asignados."
+);
+
 @Resolver(() => WeekSchedule)
 export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
     @FieldResolver()
@@ -127,6 +131,9 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
         if (!weekSchedule) {
             throw new ApolloError("WeekSchedule with given ID doesn't exist.");
         }
+
+        if ((await weekSchedule.students).length > 0)
+            throw weekScheduleHasStudentsError;
 
         await weekSchedule.remove();
 

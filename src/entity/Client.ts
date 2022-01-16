@@ -18,9 +18,7 @@ export class Client extends BaseEntity {
     @OneToOne(() => User, (user) => user.client, { onDelete: "CASCADE" })
     user!: Promise<User>;
 
-    @ManyToMany(() => WeekSchedule, (ws) => ws.students, {
-        onDelete: "RESTRICT",
-    })
+    @ManyToMany(() => WeekSchedule, (ws) => ws.students)
     weekSchedules!: Promise<WeekSchedule[]>;
 
     @Field(() => [WeekSchedule], { name: "weekSchedules" })
