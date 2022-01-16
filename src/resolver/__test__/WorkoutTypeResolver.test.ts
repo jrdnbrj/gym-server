@@ -1,4 +1,4 @@
-import { Connection, getConnection } from "typeorm";
+import { getConnection } from "typeorm";
 import { testDb } from "../../../test/testDb";
 import { WorkoutType } from "../../entity/WorkoutType";
 import { workoutTypeAllQuery } from "./query/workoutTypeAllQuery";
