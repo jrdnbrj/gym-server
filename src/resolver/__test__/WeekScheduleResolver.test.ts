@@ -1,13 +1,18 @@
 import { getConnection } from "typeorm";
 import { testDb } from "../../../test/testDb";
 import { WeekSchedule } from "../../entity/WeekSchedule";
-import { gCallExpectNoErrors, gCallExpectOneError } from "./util/gCallExpect";
+import {
+    gCallExpectNoErrors,
+    gCallExpectNotEnoughPrivilegesError,
+    gCallExpectNotLoggedInError,
+    gCallExpectOneError,
+} from "./util/gCallExpect";
 import { weekScheduleAllQuery } from "./query/weekScheduleAllQuery";
 import { User } from "../../entity/User";
 import { genDbUser } from "../../../test/util/genDbUser";
 import { genDbWeekSchedule } from "../../../test/util/genDbWeekSchedule";
 import { weekScheduleRemove } from "./mutation/weekScheduleRemove";
-import { genMockReqAsAdmin } from "../../../test/util/genMockReq";
+import { genMockReq, genMockReqAsAdmin } from "../../../test/util/genMockReq";
 import { weekScheduleHasStudentsError } from "../WeekScheduleResolver";
 
 beforeAll(async () => {
@@ -116,7 +121,7 @@ describe("weekScheduleRemove mutation", () => {
         const req = await genMockReqAsAdmin();
         const ws = await genDbWeekSchedule({ genRandomStudents: true });
 
-        gCallExpectOneError(
+        await gCallExpectOneError(
             weekScheduleRemove,
             weekScheduleHasStudentsError.message,
             {
@@ -126,5 +131,43 @@ describe("weekScheduleRemove mutation", () => {
                 },
             }
         );
+    });
+
+    it("should error if not loggedd in", async () => {
+        const req = genMockReq();
+        const ws = await genDbWeekSchedule();
+
+        await gCallExpectNotLoggedInError(weekScheduleRemove, {
+            context: {
+                req,
+            },
+            variableValues: {
+                weekScheduleID: ws.id,
+            },
+        });
+
+        // Test ws is unchanged
+        expect(await WeekSchedule.findOne(ws.id)).toBeDefined();
+    });
+
+    it("should error if not logged in as admin", async () => {
+        const nonAdmin = await genDbUser();
+
+        const req = genMockReq();
+        req.session.userId = nonAdmin.id;
+
+        const ws = await genDbWeekSchedule();
+
+        await gCallExpectNotEnoughPrivilegesError(weekScheduleRemove, {
+            context: {
+                req,
+            },
+            variableValues: {
+                weekScheduleID: ws.id,
+            },
+        });
+
+        // Test ws is unchanged
+        expect(await WeekSchedule.findOne(ws.id)).toBeDefined();
     });
 });

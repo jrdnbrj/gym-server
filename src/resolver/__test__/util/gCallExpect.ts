@@ -1,6 +1,8 @@
 import { DocumentNode } from "graphql";
 import { gCall } from "../../../../test/util/gCall";
 import { User } from "../../../entity/User";
+import { notEnoughPrivilegesError } from "../../../error/notEnoughPrivilegesError";
+import { notLoggedInError } from "../../../error/notLoggedInError";
 import { RegularContext } from "../../../types/RegularContext";
 import {
     newFullPrivilegeUserFields,
@@ -86,4 +88,24 @@ export const gCallExpectOneError = async (
     expect(errors![0].message).toEqual(errorMessage);
 
     return errors![0];
+};
+
+/**Executes an operation and expects an notLoggedInError.*/
+export const gCallExpectNotLoggedInError = async (
+    operation: DocumentNode,
+    options: gCallExpectOptions
+) => {
+    await gCallExpectOneError(operation, notLoggedInError.message, options);
+};
+
+/**Executes an operation and expects an error for not having enough user privileges..*/
+export const gCallExpectNotEnoughPrivilegesError = async (
+    operation: DocumentNode,
+    options: gCallExpectOptions
+) => {
+    await gCallExpectOneError(
+        operation,
+        notEnoughPrivilegesError.message,
+        options
+    );
 };
