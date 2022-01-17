@@ -39,6 +39,7 @@ export const genDbWeekSchedule = async (
 
     const ws = WeekSchedule.create({
         days,
+        price: Math.floor(Math.random() * 20 + 10),
         startDate,
         students: Promise.resolve([]),
     });

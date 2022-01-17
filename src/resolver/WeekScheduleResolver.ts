@@ -65,6 +65,7 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
     @Mutation(() => WeekSchedule)
     async weekScheduleCreate(
         @Arg("weekDays", () => [Weekday]) weekdays: Weekday[],
+        @Arg("price") price: number,
         @Arg("startDate", () => String) startDateString: string,
         @Arg("instructorID", () => ID) instructorID: string,
         @Arg("type", () => String) workoutType: string
@@ -85,7 +86,7 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
             );
         }
 
-        let weekSchedule = new WeekSchedule();
+        let weekSchedule = new WeekSchedule(price);
         weekSchedule.instructor = Promise.resolve(
             (await instructorUser.instructor)!
         );

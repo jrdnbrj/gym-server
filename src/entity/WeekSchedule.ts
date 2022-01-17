@@ -21,6 +21,11 @@ export class WeekSchedule extends BaseEntity {
     @PrimaryGeneratedColumn()
     id!: number;
 
+    /**Price per month.*/
+    @Field()
+    @Column({ nullable: false })
+    price!: number;
+
     @ManyToOne(() => WorkoutType, { onDelete: "RESTRICT" })
     workoutType!: Promise<WorkoutType>;
 
@@ -61,4 +66,10 @@ export class WeekSchedule extends BaseEntity {
     @Field()
     @Column({ type: "timestamptz" })
     startDate!: Date;
+
+    constructor(price: number) {
+        super();
+
+        this.price = price;
+    }
 }
