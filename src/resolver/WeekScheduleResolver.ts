@@ -18,7 +18,7 @@ import RequireAdmin from "../gql_middleware/RequireAdmin";
 import { WorkoutType } from "../entity/WorkoutType";
 import { dateWithoutTimezone } from "../util/dateWithoutTimezone";
 
-const weekScheduleHasStudentsError = new ApolloError(
+export const weekScheduleHasStudentsError = new ApolloError(
     "Clase tiene estudiantes asignados."
 );
 
