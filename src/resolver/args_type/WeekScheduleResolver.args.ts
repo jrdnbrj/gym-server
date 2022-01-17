@@ -1,7 +1,7 @@
 import { ArgsType, Field, ID } from "type-graphql";
 
 @ArgsType()
-export class WeekScheduleRemoveArgs {
+export class WeekScheduleChangeInstructorArgs {
     @Field(() => ID)
     weekScheduleID!: string;
 

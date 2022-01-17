@@ -14,6 +14,9 @@ import { genDbWeekSchedule } from "../../../test/util/genDbWeekSchedule";
 import { weekScheduleRemove } from "./mutation/weekScheduleRemove";
 import { genMockReq, genMockReqAsAdmin } from "../../../test/util/genMockReq";
 import { weekScheduleHasStudentsError } from "../WeekScheduleResolver";
+import { weekScheduleChangeInstructorMutation } from "./mutation/weekScheduleChangeInstructorMutation";
+import { WeekScheduleChangeInstructorArgs } from "../args_type/WeekScheduleResolver.args";
+import { userIsNotInstructorError } from "../../error/userIsNotRole";
 
 beforeAll(async () => {
     await testDb(false);
@@ -133,7 +136,7 @@ describe("weekScheduleRemove mutation", () => {
         );
     });
 
-    it("should error if not loggedd in", async () => {
+    it("should error if not logged in", async () => {
         const req = genMockReq();
         const ws = await genDbWeekSchedule();
 
@@ -169,5 +172,119 @@ describe("weekScheduleRemove mutation", () => {
 
         // Test ws is unchanged
         expect(await WeekSchedule.findOne(ws.id)).toBeDefined();
+    });
+});
+
+describe("weekScheduleChangeInstructor", () => {
+    it("should error if not logged in", async () => {
+        const req = genMockReq();
+        const ws = await genDbWeekSchedule();
+
+        const instUser = await genDbUser({ isInstructor: true });
+
+        await gCallExpectNotLoggedInError(
+            weekScheduleChangeInstructorMutation,
+            {
+                context: {
+                    req,
+                },
+                variableValues: {
+                    weekScheduleID: ws.id as any,
+                    instructorID: instUser.id,
+                } as WeekScheduleChangeInstructorArgs,
+            }
+        );
+
+        // Test ws is unchanged
+        const foundWs = await WeekSchedule.findOne(ws.id);
+        expect((await foundWs!.instructor).id).toEqual(
+            (await ws.instructor)!.id
+        );
+    });
+
+    it("should error if not logged in as admin", async () => {
+        const nonAdmin = await genDbUser();
+
+        const req = genMockReq();
+        req.session.userId = nonAdmin.id;
+
+        const ws = await genDbWeekSchedule();
+        const instUser = await genDbUser({ isInstructor: true });
+
+        await gCallExpectNotEnoughPrivilegesError(
+            weekScheduleChangeInstructorMutation,
+            {
+                context: {
+                    req,
+                },
+                variableValues: {
+                    weekScheduleID: ws.id as any,
+                    instructorID: instUser.id,
+                } as WeekScheduleChangeInstructorArgs,
+            }
+        );
+
+        // Test ws is unchanged
+        expect(await WeekSchedule.findOne(ws.id)).toBeDefined();
+    });
+
+    it("should successfully change a ws' instructor", async () => {
+        const req = await genMockReqAsAdmin();
+
+        const ws = await genDbWeekSchedule();
+        const instUser = await genDbUser({ isInstructor: true });
+
+        const data = await gCallExpectNoErrors(
+            weekScheduleChangeInstructorMutation,
+            {
+                context: {
+                    req,
+                },
+                variableValues: {
+                    weekScheduleID: ws.id as any,
+                    instructorID: instUser.id,
+                } as WeekScheduleChangeInstructorArgs,
+            }
+        );
+
+        const result = data.weekScheduleChangeInstructor;
+        expect(result).toMatchObject({
+            instructor: {
+                id: instUser.id,
+            },
+        });
+
+        // Test ws
+        const foundWs = await WeekSchedule.findOne(ws.id);
+
+        expect(foundWs).toBeDefined();
+        expect(await foundWs!.instructor).toEqual(await instUser.instructor);
+    });
+
+    it("should error when instructorID's user is not an instructor", async () => {
+        const req = await genMockReqAsAdmin();
+
+        const ws = await genDbWeekSchedule();
+        const nonInstUser = await genDbUser();
+
+        await gCallExpectOneError(
+            weekScheduleChangeInstructorMutation,
+            userIsNotInstructorError.message,
+            {
+                context: {
+                    req,
+                },
+                variableValues: {
+                    weekScheduleID: ws.id as any,
+                    instructorID: nonInstUser.id,
+                } as WeekScheduleChangeInstructorArgs,
+            }
+        );
+
+        // Test ws is unchanged
+        const foundWs = await WeekSchedule.findOne(ws.id);
+
+        expect(foundWs).toBeDefined();
+        expect(await foundWs!.instructor).toEqual(await ws.instructor);
     });
 });

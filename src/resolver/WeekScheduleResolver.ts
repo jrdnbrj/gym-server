@@ -18,9 +18,9 @@ import { DateTime } from "luxon";
 import RequireAdmin from "../gql_middleware/RequireAdmin";
 import { WorkoutType } from "../entity/WorkoutType";
 import { dateWithoutTimezone } from "../util/dateWithoutTimezone";
-import { WeekScheduleRemoveArgs } from "./args_type/WeekScheduleResolver.args";
 import { userDoesNotExistError } from "../error/userDoesNotExistError";
 import { userIsNotInstructorError } from "../error/userIsNotRole";
+import { WeekScheduleChangeInstructorArgs } from "./args_type/WeekScheduleResolver.args";
 
 export const weekScheduleHasStudentsError = new ApolloError(
     "Clase tiene estudiantes asignados."
@@ -153,7 +153,8 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
     @Mutation(() => WeekSchedule)
     @UseMiddleware(RequireAdmin)
     async weekScheduleChangeInstructor(
-        @Args() { weekScheduleID, instructorID }: WeekScheduleRemoveArgs
+        @Args()
+        { weekScheduleID, instructorID }: WeekScheduleChangeInstructorArgs
     ) {
         // Find WS.
         const ws = await WeekSchedule.findOne(weekScheduleID);
