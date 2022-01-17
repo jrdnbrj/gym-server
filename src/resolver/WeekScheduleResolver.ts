@@ -8,6 +8,7 @@ import {
     ResolverInterface,
     Root,
     FieldResolver,
+    Args,
 } from "type-graphql";
 import { WeekSchedule } from "../entity/WeekSchedule";
 import { Weekday } from "../enum/Weekday";
@@ -17,9 +18,16 @@ import { DateTime } from "luxon";
 import RequireAdmin from "../gql_middleware/RequireAdmin";
 import { WorkoutType } from "../entity/WorkoutType";
 import { dateWithoutTimezone } from "../util/dateWithoutTimezone";
+import { WeekScheduleRemoveArgs } from "./args_type/WeekScheduleResolver.args";
+import { userDoesNotExistError } from "../error/userDoesNotExistError";
+import { userIsNotInstructorError } from "../error/userIsNotRole";
 
 export const weekScheduleHasStudentsError = new ApolloError(
     "Clase tiene estudiantes asignados."
+);
+
+export const weekScheduleNotFoundError = new ApolloError(
+    "Clase no encontrada."
 );
 
 @Resolver(() => WeekSchedule)
@@ -131,7 +139,7 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
         const weekSchedule = await WeekSchedule.findOne(weekScheduleID);
 
         if (!weekSchedule) {
-            throw new ApolloError("WeekSchedule with given ID doesn't exist.");
+            throw weekScheduleNotFoundError;
         }
 
         if ((await weekSchedule.students).length > 0)
@@ -140,5 +148,26 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
         await weekSchedule.remove();
 
         return true;
+    }
+
+    @Mutation(() => WeekSchedule)
+    @UseMiddleware(RequireAdmin)
+    async weekScheduleChangeInstructor(
+        @Args() { weekScheduleID, instructorID }: WeekScheduleRemoveArgs
+    ) {
+        // Find WS.
+        const ws = await WeekSchedule.findOne(weekScheduleID);
+        if (!ws) throw weekScheduleNotFoundError;
+
+        // Find instructor.
+        const user = await User.findOne(instructorID);
+        if (!user) throw userDoesNotExistError;
+
+        const instructor = await user.instructor;
+        if (!instructor) throw userIsNotInstructorError;
+
+        // Change instructor.
+        ws.instructor = Promise.resolve(instructor);
+        return ws.save();
     }
 }
