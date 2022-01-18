@@ -62,7 +62,7 @@ export class InstructorResolver implements ResolverInterface<Instructor> {
     @Mutation(() => Boolean)
     @UseMiddleware(RequireInstructor)
     async instructorSendEmailWeekSchedule(
-        @Arg("weekScheduleID") weekScheduleID: number,
+        @Arg("weekScheduleID", () => ID) weekScheduleID: string,
         @Arg("message") message: string,
         @Ctx() { req, transporter }: RegularContext
     ): Promise<boolean> {

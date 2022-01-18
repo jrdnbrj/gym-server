@@ -104,7 +104,7 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
 
     @Mutation(() => WeekSchedule)
     async weekScheduleAddStudent(
-        @Arg("weekScheduleID", () => ID) weekScheduleID: number,
+        @Arg("weekScheduleID", () => ID) weekScheduleID: string,
         @Arg("clientID", () => ID) clientID: string
     ): Promise<WeekSchedule> {
         // TODO: don't allow same user to register twice.
@@ -133,10 +133,8 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
     @Mutation(() => Boolean)
     @UseMiddleware(RequireAdmin)
     async weekScheduleRemove(
-        @Arg("weekScheduleID", () => ID) weekScheduleIDStr: string
+        @Arg("weekScheduleID", () => ID) weekScheduleID: string
     ): Promise<boolean> {
-        const weekScheduleID = Number.parseInt(weekScheduleIDStr);
-
         const weekSchedule = await WeekSchedule.findOne(weekScheduleID);
 
         if (!weekSchedule) {

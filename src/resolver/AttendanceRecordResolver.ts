@@ -33,7 +33,7 @@ export class AttendanceRecordResolver
             defaultValue: null,
             nullable: true,
         })
-        weekScheduleID: number | null,
+        weekScheduleID: string | null,
         @Arg("date", () => String, {
             defaultValue: null,
             nullable: true,
@@ -41,7 +41,7 @@ export class AttendanceRecordResolver
         dateString: string | null
     ): Promise<AttendanceRecord[]> {
         // Apply filters
-        const filters: { weekSchedule?: { id: number }; date?: Date } = {};
+        const filters: { weekSchedule?: { id: string }; date?: Date } = {};
 
         if (weekScheduleID) {
             filters.weekSchedule = { id: weekScheduleID };
@@ -69,7 +69,7 @@ export class AttendanceRecordResolver
     /** Creates a new AttendanceRecord for the current date with all students `attended` as `true`.*/
     @Mutation(() => AttendanceRecord)
     async attendanceRecordCreate(
-        @Arg("weekScheduleID") weekScheduleID: number
+        @Arg("weekScheduleID", () => ID) weekScheduleID: string
     ): Promise<AttendanceRecord> {
         // TODO: Fix wrong today's weekDay bug. Related to Docker container.
         const weekSchedule = await WeekSchedule.findOne(weekScheduleID);
@@ -125,13 +125,12 @@ export class AttendanceRecordResolver
 
     private async _attendanceRecordSetAttended(
         attendedValue: boolean,
-        weekScheduleID: number,
+        weekScheduleID: string,
         notAssistedIDs: string[]
     ): Promise<AttendanceRecord> {
         const today = dateWithoutTime(new Date());
 
         const record = await AttendanceRecord.findOne({
-            relations: ["weekSchedule"],
             where: { weekSchedule: { id: weekScheduleID }, date: today },
         });
 
@@ -162,7 +161,7 @@ export class AttendanceRecordResolver
     /**Sets the given students' attendance to false in today's WeekSchedule's AttendanceRecord. AttendanceRecord must be created previously.*/
     @Mutation(() => AttendanceRecord)
     async attendanceRecordSetNotAssisted(
-        @Arg("weekScheduleID") weekScheduleID: number,
+        @Arg("weekScheduleID", () => ID) weekScheduleID: string,
         @Arg("notAssistedIDs", () => [ID]) notAssistedIDs: string[]
     ): Promise<AttendanceRecord> {
         return this._attendanceRecordSetAttended(
@@ -175,7 +174,7 @@ export class AttendanceRecordResolver
     /**Sets the given students' attendance to true in today's WeekSchedule's AttendanceRecord. AttendanceRecord must be created previously.*/
     @Mutation(() => AttendanceRecord)
     async attendanceRecordSetAssisted(
-        @Arg("weekScheduleID") weekScheduleID: number,
+        @Arg("weekScheduleID", () => ID) weekScheduleID: string,
         @Arg("notAssistedIDs", () => [ID]) notAssistedIDs: string[]
     ): Promise<AttendanceRecord> {
         return this._attendanceRecordSetAttended(

@@ -18,8 +18,8 @@ import { Client } from "./Client";
 @Entity()
 export class WeekSchedule extends BaseEntity {
     @Field()
-    @PrimaryGeneratedColumn()
-    id!: number;
+    @PrimaryGeneratedColumn("uuid")
+    id!: string;
 
     /**Price per month.*/
     @Field()

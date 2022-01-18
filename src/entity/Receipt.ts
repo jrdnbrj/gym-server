@@ -26,7 +26,7 @@ export class Receipt extends BaseEntity {
 
     /**Corresponds to the paid for weekSchedule's id at the moment of the transaction. Thus, it is not guaranteed the weekSchedule still exists when reading this receipt.*/
     @Column()
-    weekScheduleID!: number;
+    weekScheduleID!: string;
 
     /**weekSchedule's workoutType's name at the moment of transaction.*/
     @Column()

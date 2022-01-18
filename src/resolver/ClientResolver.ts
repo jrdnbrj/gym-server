@@ -62,7 +62,7 @@ export class ClientResolver implements ResolverInterface<Client> {
     @Mutation(() => Boolean)
     @UseMiddleware(RequireClient)
     async clientRemoveReservation(
-        @Arg("weekScheduleID") weekScheduleID: number,
+        @Arg("weekScheduleID", () => ID) weekScheduleID: string,
         @Ctx() { req }: RegularContext
     ): Promise<boolean> {
         const user = (await User.findOne(req.session.userId!))!;
