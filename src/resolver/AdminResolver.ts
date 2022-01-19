@@ -5,6 +5,7 @@ import {
     Arg,
     UseMiddleware,
     ID,
+    Args,
 } from "type-graphql";
 import { User } from "../entity/User";
 import RequireAdmin from "../gql_middleware/RequireAdmin";
@@ -12,6 +13,8 @@ import Admin from "../entity/Admin";
 import { Client } from "../entity/Client";
 import { Instructor } from "../entity/Instructor";
 import { userDoesNotExistError } from "../error/userDoesNotExistError";
+import { Receipt } from "../entity/Receipt";
+import { AdminSubmitPaymentArgs } from "./args_type/AdminResolver.args";
 
 @Resolver()
 export class AdminResolver {
@@ -82,4 +85,9 @@ export class AdminResolver {
 
         return user;
     }
+
+    /**Creates a receipt for a client's monthly reservation. It allows to pay in advance.*/
+    @Mutation(() => Receipt)
+    @UseMiddleware(RequireAdmin)
+    async adminSubmitPayment(@Args() {}: AdminSubmitPaymentArgs) {}
 }

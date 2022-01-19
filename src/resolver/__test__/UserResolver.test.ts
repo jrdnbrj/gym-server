@@ -1,4 +1,4 @@
-import { Connection, getConnection } from "typeorm";
+import { getConnection } from "typeorm";
 import { testDb } from "../../../test/testDb";
 import { userRegisterMutation } from "./mutation/userRegisterMutation";
 import * as faker from "faker";
