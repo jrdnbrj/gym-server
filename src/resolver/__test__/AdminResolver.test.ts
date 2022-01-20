@@ -216,3 +216,7 @@ describe("adminUserRoles mutation", () => {
         expect(await foundUser!.instructor).toBeDefined();
     });
 });
+
+describe("adminSubmitPayment mutation", () => {
+    test.todo("all adminSubmitPayment tests");
+});
