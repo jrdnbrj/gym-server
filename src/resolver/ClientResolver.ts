@@ -9,6 +9,7 @@ import {
     ResolverInterface,
     FieldResolver,
     Root,
+    Args,
 } from "type-graphql";
 import { Client } from "../entity/Client";
 import { User } from "../entity/User";
@@ -16,6 +17,10 @@ import { ApolloError } from "apollo-server-core";
 import { RegularContext } from "../types/RegularContext";
 import { WeekSchedule } from "../entity/WeekSchedule";
 import RequireClient from "../gql_middleware/RequireClient";
+import { ClientHasPaidForWeekScheduleArgs } from "./args_type/ClientResolver.args";
+import { userDoesNotExistError } from "../error/userDoesNotExistError";
+import { DateTime } from "luxon";
+import { userIsNotClientError } from "../error/userIsNotRole";
 
 declare module "express-session" {
     interface SessionData {
@@ -65,6 +70,7 @@ export class ClientResolver implements ResolverInterface<Client> {
         @Arg("weekScheduleID", () => ID) weekScheduleID: string,
         @Ctx() { req }: RegularContext
     ): Promise<boolean> {
+        // TODO: restrict mutation if class has already been paid for.
         const user = (await User.findOne(req.session.userId!))!;
 
         // Validate weekSchedule
@@ -73,6 +79,8 @@ export class ClientResolver implements ResolverInterface<Client> {
         if (!weekSchedule) {
             throw new ApolloError("WeekSchedule does not exist.");
         }
+
+        // Check if it hasn't been paid for.
 
         // Delete
         const students = await weekSchedule.students;
@@ -91,5 +99,25 @@ export class ClientResolver implements ResolverInterface<Client> {
         }
 
         return true;
+    }
+
+    @Query(() => Boolean)
+    async clientHasPaidForWeekSchedule(
+        @Args()
+        {
+            weekScheduleID,
+            clientID,
+            monthDate,
+        }: ClientHasPaidForWeekScheduleArgs
+    ): Promise<boolean> {
+        const clientUser = await User.findOne(clientID);
+        if (!clientUser) throw userDoesNotExistError;
+
+        const client = await clientUser.client;
+        if (!client) throw userIsNotClientError;
+
+        const datetime = monthDate ? DateTime.fromJSDate(monthDate) : undefined;
+
+        return await client.hasPaidFor(weekScheduleID, datetime);
     }
 }
