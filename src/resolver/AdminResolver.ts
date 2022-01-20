@@ -15,6 +15,19 @@ import { Instructor } from "../entity/Instructor";
 import { userDoesNotExistError } from "../error/userDoesNotExistError";
 import { Receipt } from "../entity/Receipt";
 import { AdminSubmitPaymentArgs } from "./args_type/AdminResolver.args";
+import { DateTime } from "luxon";
+import { userIsNotClientError } from "../error/userIsNotRole";
+import { ApolloError } from "apollo-server-core";
+import { WeekSchedule } from "../entity/WeekSchedule";
+import { weekScheduleNotFoundError } from "./WeekScheduleResolver";
+
+export const clientAlreadyPaidForWSError = new ApolloError(
+    "El cliente ya ha pagado la mensualidad de la clase."
+);
+
+export const clientNotInWeekScheduleError = new ApolloError(
+    "El cliente no es un estudiante de la clase."
+);
 
 @Resolver()
 export class AdminResolver {
@@ -89,5 +102,52 @@ export class AdminResolver {
     /**Creates a receipt for a client's monthly reservation. It allows to pay in advance.*/
     @Mutation(() => Receipt)
     @UseMiddleware(RequireAdmin)
-    async adminSubmitPayment(@Args() {}: AdminSubmitPaymentArgs) {}
+    async adminSubmitPayment(
+        @Args() { weekScheduleID, clientID, months }: AdminSubmitPaymentArgs
+    ): Promise<Receipt> {
+        if (!months) months = 1;
+
+        // Get client
+        const clientUser = await User.findOne(clientID);
+        if (!clientUser) throw userDoesNotExistError;
+
+        const client = await clientUser.client;
+        if (!client) throw userIsNotClientError;
+
+        // Get weekSchedule
+        const weekSchedule = await WeekSchedule.findOne(weekScheduleID);
+        if (!weekSchedule) throw weekScheduleNotFoundError;
+
+        const students = await weekSchedule.students;
+        const studentsClientIDs = students.map((s) => s.id);
+
+        // Assert client has reserved the given weekSchedule
+        if (studentsClientIDs.indexOf(client.id) < 0) {
+            throw clientNotInWeekScheduleError;
+        }
+
+        const monthDates: DateTime[] = [];
+        for (let i = 0; i < months; i++) {
+            monthDates.push(DateTime.local().plus({ months: i }));
+        }
+
+        // Check if client already has paid for thoso months
+        for (const md of monthDates) {
+            if (await client.hasPaidFor(weekScheduleID, md)) {
+                throw clientAlreadyPaidForWSError;
+            }
+        }
+
+        // Generate receipt
+        const receipt = await Receipt.create({
+            clientID: clientID,
+            totalAmount: weekSchedule.price * months,
+            clientEmail: clientUser.email,
+            weekScheduleID,
+            workoutTypeName: (await weekSchedule.workoutType).name,
+            paidForMonthsDates: monthDates.map((d) => d.toJSDate()),
+        }).save();
+
+        return (await Receipt.findOne(receipt.id))!;
+    }
 }

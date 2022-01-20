@@ -42,7 +42,7 @@ export class Receipt extends BaseEntity {
 
     /**Dates whose months and years represent the ones paid for in the receipt.*/
     @Column("date", { array: true })
-    @Field(() => String)
+    @Field(() => [Date])
     paidForMonthsDates!: Date[];
 
     /**Total amount of the transaction, in dollars.*/
