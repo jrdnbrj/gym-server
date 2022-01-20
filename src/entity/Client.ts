@@ -27,7 +27,7 @@ export class Client extends BaseEntity {
     _weekSchedulesField!: WeekSchedule[];
 
     // Methods
-    /**Checks if client has already paid for a given weekSchedule in a given month. If `monthDate` is undefined, it defaults to current month.*/
+    /**Checks if client has already paid for a given weekSchedule in a given month and year. If `monthDate` is undefined, it defaults to current month.*/
     async hasPaidFor(
         weekScheduleID: string,
         monthDate?: DateTime
@@ -46,7 +46,11 @@ export class Client extends BaseEntity {
             );
 
             for (const date of receiptDates) {
-                if (date.month == monthDate!.month) return true;
+                if (
+                    date.month == monthDate!.month &&
+                    date.year == monthDate!.year
+                )
+                    return true;
             }
 
             return false;
