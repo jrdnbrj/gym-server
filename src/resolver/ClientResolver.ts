@@ -62,7 +62,8 @@ export class ClientResolver implements ResolverInterface<Client> {
     }
 
     /**Deletes a client's weekSchedule reservation.
-     * Always returns true if no exception was thrown.
+     *
+     * Returns true if reservation was removed. Otherwise, it returns false. It may be the case that it returns false because the client wasn't a student of the given weekSchedule.
      */
     @Mutation(() => Boolean)
     @UseMiddleware(RequireClient)
@@ -72,6 +73,7 @@ export class ClientResolver implements ResolverInterface<Client> {
     ): Promise<boolean> {
         // TODO: restrict mutation if class has already been paid for.
         const user = (await User.findOne(req.session.userId!))!;
+        const client = (await user.client)!;
 
         // Validate weekSchedule
         let weekSchedule = await WeekSchedule.findOne(weekScheduleID);
@@ -84,21 +86,21 @@ export class ClientResolver implements ResolverInterface<Client> {
 
         // Delete
         const students = await weekSchedule.students;
-        const studentsUserIDs = await Promise.all(
-            students.map(async (s) => (await s.user).id)
-        );
-        const studentIndex = studentsUserIDs.indexOf(user.id);
+        const studentsUserIDs = students.map((s) => s.id);
+        const studentIndex = studentsUserIDs.indexOf((await user.client)!.id);
 
         if (studentIndex >= 0) {
             weekSchedule.students = Promise.resolve(
-                students.splice(studentIndex, 1)
+                students.filter((s) => s.id != client.id)
             );
 
             weekSchedule.quotas += 1;
             await weekSchedule.save();
+
+            return true;
         }
 
-        return true;
+        return false;
     }
 
     @Query(() => Boolean)
