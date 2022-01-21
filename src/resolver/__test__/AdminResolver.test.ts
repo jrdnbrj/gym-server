@@ -1,16 +1,21 @@
 import { randomUUID } from "crypto";
+import { DateTime } from "luxon";
 import { getConnection } from "typeorm";
 import { testDb } from "../../../test/testDb";
 import { genDbUser } from "../../../test/util/genDbUser";
 import { genDbWeekSchedule } from "../../../test/util/genDbWeekSchedule";
-import { genMockReq } from "../../../test/util/genMockReq";
+import { genMockReq, genMockReqAsAdmin } from "../../../test/util/genMockReq";
+import { Receipt } from "../../entity/Receipt";
 import { instructorReferencedError, User } from "../../entity/User";
 import { notEnoughPrivilegesError } from "../../error/notEnoughPrivilegesError";
 import { notLoggedInError } from "../../error/notLoggedInError";
 import { userDoesNotExistError } from "../../error/userDoesNotExistError";
+import { AdminSubmitPaymentArgs } from "../args_type/AdminResolver.args";
+import { adminSubmitPaymentMutation } from "./mutation/adminSubmitPaymentMutation";
 import { adminUserRolesMutation } from "./mutation/adminUserRolesMutation";
 import {
     gCallExpectFullPrivilegeUser,
+    gCallExpectNoErrors,
     gCallExpectNoPrivilegeUser,
     gCallExpectOneError,
 } from "./util/gCallExpect";
@@ -217,6 +222,99 @@ describe("adminUserRoles mutation", () => {
     });
 });
 
+const testSuccessfulAdminSubmitPayment = async (months?: number) => {
+    const req = await genMockReqAsAdmin();
+
+    const ws = await genDbWeekSchedule();
+    const clientUser = await genDbUser({ isClient: true });
+
+    // Register client to ws
+    ws.students = Promise.resolve([(await clientUser.client)!]);
+    await ws.save();
+
+    // Mutation
+    const data = await gCallExpectNoErrors(adminSubmitPaymentMutation, {
+        variableValues: {
+            clientID: clientUser.id,
+            weekScheduleID: ws.id,
+            months,
+        } as AdminSubmitPaymentArgs,
+        context: { req },
+    });
+
+    // Assert data
+    const result = data.adminSubmitPayment;
+
+    months = months || 1;
+    const totalAmount = ws.price * months;
+
+    expect(result).toMatchObject({
+        clientID: clientUser.id,
+        clientEmail: clientUser.email,
+        weekScheduleID: ws.id,
+        workoutTypeName: (await ws.workoutType).name,
+        totalAmount,
+    });
+
+    const transactionDate = DateTime.fromISO(result.transactionDate);
+    expect(transactionDate.diffNow().minutes).toBeLessThanOrEqual(1);
+
+    const monthsDates: string[] = result.paidForMonthsDates;
+    expect(monthsDates.length).toEqual(months);
+
+    for (let i = 0; i < monthsDates.length; i++) {
+        const date = DateTime.fromISO(monthsDates[i]);
+        const expectedDate = DateTime.local().plus({ months: i });
+
+        // Expect date to have correct month and year
+        expect(date.month).toEqual(expectedDate.month);
+        expect(date.year).toEqual(expectedDate.year);
+    }
+
+    // Assert db
+    const receipt = await Receipt.findOne(result.id as string);
+    expect(receipt).toMatchObject<Partial<Receipt>>({
+        clientID: clientUser.id,
+        clientEmail: clientUser.email,
+        weekScheduleID: ws.id,
+        workoutTypeName: (await ws.workoutType).name,
+        totalAmount,
+    });
+
+    expect(
+        DateTime.fromJSDate(receipt!.transactionDate).diffNow().minutes
+    ).toBeLessThanOrEqual(1);
+
+    // monthsDates = result.paidForMonthsDates;
+    const paidForMonthsDates = receipt!.paidForMonthsDates;
+    expect(paidForMonthsDates.length).toEqual(months);
+
+    for (let i = 0; i < paidForMonthsDates.length; i++) {
+        const date = DateTime.fromJSDate(paidForMonthsDates[i]);
+        const expectedDate = DateTime.local().plus({ months: i });
+
+        // Expect date to have correct month and year
+        expect(date.month).toEqual(expectedDate.month);
+        expect(date.year).toEqual(expectedDate.year);
+    }
+};
+
 describe("adminSubmitPayment mutation", () => {
-    test.todo("all adminSubmitPayment tests");
+    test("should successfully submit a payment for one month (no explicit arg)", async () => {
+        await testSuccessfulAdminSubmitPayment();
+    });
+
+    test("should successfully submit a payment for one month (explicit arg)", async () => {
+        await testSuccessfulAdminSubmitPayment(1);
+    });
+
+    test("should successfully submit a payment for more than one month", async () => {
+        await testSuccessfulAdminSubmitPayment(
+            Math.floor(Math.random() * 10 + 1)
+        );
+    });
+
+    test.todo("error when student is not in class");
+    test.todo("error when class has already been paid");
+    test.todo("error when months arg is 0 or less");
 });
