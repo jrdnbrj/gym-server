@@ -288,3 +288,5 @@ describe("weekScheduleChangeInstructor", () => {
         expect(await foundWs!.instructor).toEqual(await ws.instructor);
     });
 });
+
+test.todo("weekScheduleEdit resolver");

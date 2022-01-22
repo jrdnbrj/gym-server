@@ -19,7 +19,11 @@ import RequireAdmin from "../gql_middleware/RequireAdmin";
 import { WorkoutType } from "../entity/WorkoutType";
 import { userDoesNotExistError } from "../error/userDoesNotExistError";
 import { userIsNotInstructorError } from "../error/userIsNotRole";
-import { WeekScheduleChangeInstructorArgs } from "./args_type/WeekScheduleResolver.args";
+import {
+    WeekScheduleChangeInstructorArgs,
+    WeekScheduleEditArgs,
+} from "./args_type/WeekScheduleResolver.args";
+import { workoutTypeNotFoundError } from "./WorkoutTypeResolver";
 
 export const weekScheduleHasStudentsError = new ApolloError(
     "Clase tiene estudiantes asignados."
@@ -171,5 +175,48 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
         // Change instructor.
         ws.instructor = Promise.resolve(instructor);
         return ws.save();
+    }
+
+    /**Edit general info of a WeekSchedule. No modification is performed if any argument is invalid. Requires admin.*/
+    @Mutation(() => WeekSchedule)
+    @UseMiddleware(RequireAdmin)
+    async weekScheduleEdit(
+        @Args()
+        {
+            weekScheduleID,
+            days,
+            price,
+            startDate,
+            workoutTypeName,
+        }: WeekScheduleEditArgs
+    ): Promise<WeekSchedule> {
+        const ws = await WeekSchedule.findOne(weekScheduleID);
+        if (!ws) throw weekScheduleNotFoundError;
+
+        // Modify
+        if (days) ws.days = days;
+        if (price) ws.price = price;
+
+        // Validate startDate
+        if (startDate) {
+            const startDateTime = DateTime.fromJSDate(startDate);
+
+            if (!startDateTime.isValid) {
+                throw new ApolloError(
+                    "Invalid date: " + startDateTime.invalidExplanation
+                );
+            }
+
+            ws.startDate = startDate;
+        }
+
+        if (workoutTypeName) {
+            const wt = await WorkoutType.findOne({ name: workoutTypeName });
+            if (!wt) throw workoutTypeNotFoundError;
+
+            ws.workoutType = Promise.resolve(wt);
+        }
+
+        return await ws.save();
     }
 }
