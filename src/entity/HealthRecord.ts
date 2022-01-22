@@ -24,8 +24,14 @@ export class HealthRecord extends BaseEntity {
     @ManyToOne(() => Instructor, { onDelete: "SET NULL" })
     takenBy!: Promise<Instructor | null>;
 
+    @Field(() => Instructor, { name: "takenBy", nullable: true })
+    _takenByField!: Instructor | null;
+
     @ManyToOne(() => Client, { onDelete: "CASCADE" })
     client!: Promise<Client>;
+
+    @Field(() => Client, { name: "client" })
+    _clientField!: Client;
 
     // Data
     /**Weight in kilograms.*/
