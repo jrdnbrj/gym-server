@@ -17,7 +17,6 @@ import { User } from "../entity/User";
 import { DateTime } from "luxon";
 import RequireAdmin from "../gql_middleware/RequireAdmin";
 import { WorkoutType } from "../entity/WorkoutType";
-import { dateWithoutTimezone } from "../util/dateWithoutTimezone";
 import { userDoesNotExistError } from "../error/userDoesNotExistError";
 import { userIsNotInstructorError } from "../error/userIsNotRole";
 import { WeekScheduleChangeInstructorArgs } from "./args_type/WeekScheduleResolver.args";
@@ -66,13 +65,16 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
     async weekScheduleCreate(
         @Arg("weekDays", () => [Weekday]) weekdays: Weekday[],
         @Arg("price") price: number,
-        @Arg("startDate", () => String) startDateString: string,
+        @Arg("startDate", () => Date) startDate: Date,
         @Arg("instructorID", () => ID) instructorID: string,
-        @Arg("type", () => String) workoutType: string
+        @Arg("type") workoutType: string
     ): Promise<WeekSchedule> {
-        const startDate = DateTime.fromISO(startDateString);
-        if (!startDate.isValid) {
-            throw new ApolloError(startDate.invalidExplanation!);
+        const startDateTime = DateTime.fromJSDate(startDate);
+        if (!startDateTime.isValid) {
+            throw new ApolloError(
+                "Invalid date: ",
+                startDateTime.invalidExplanation!
+            );
         }
 
         const instructorUser = await User.findOne(instructorID);
@@ -91,7 +93,7 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
             (await instructorUser.instructor)!
         );
         weekSchedule.days = weekdays;
-        weekSchedule.startDate = dateWithoutTimezone(startDate.toJSDate());
+        weekSchedule.startDate = startDate;
         weekSchedule.workoutType = Promise.resolve(
             await WorkoutType.findOneOrFail({ name: workoutType })
         );

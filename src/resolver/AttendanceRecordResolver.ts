@@ -34,11 +34,11 @@ export class AttendanceRecordResolver
             nullable: true,
         })
         weekScheduleID: string | null,
-        @Arg("date", () => String, {
+        @Arg("date", () => Date, {
             defaultValue: null,
             nullable: true,
         })
-        dateString: string | null
+        dateString: Date | null
     ): Promise<AttendanceRecord[]> {
         // Apply filters
         const filters: { weekSchedule?: { id: string }; date?: Date } = {};
@@ -48,14 +48,12 @@ export class AttendanceRecordResolver
         }
 
         if (dateString) {
-            const date = DateTime.fromISO(dateString);
+            const date = DateTime.fromJSDate(dateString);
             if (!date.isValid) {
                 throw new ApolloError(date.invalidExplanation!);
             }
 
-            filters.date = dateWithoutTime(
-                DateTime.fromISO(dateString).toJSDate()
-            );
+            filters.date = dateWithoutTime(date).toJSDate();
         }
 
         // FIXME: weird type annotation                v
@@ -76,11 +74,12 @@ export class AttendanceRecordResolver
         if (!weekSchedule) throw new ApolloError("WeekSchedule not found.");
 
         // Validate date and day.
-        const today = dateWithoutTime(new Date());
-        const todayWeekday = intAsWeekday(today.getDay());
+        const today = dateWithoutTime(DateTime.local());
+        const todayWeekday = intAsWeekday(today.weekday);
 
         if (
-            today.getMilliseconds() < weekSchedule.startDate.getMilliseconds()
+            today.toMillis() <
+            DateTime.fromJSDate(weekSchedule.startDate).toMillis()
         ) {
             throw new ApolloError("WeekSchedule hasn't started yet.");
         }
@@ -104,7 +103,7 @@ export class AttendanceRecordResolver
         // Create record.
         const record = new AttendanceRecord();
         record.weekSchedule = weekSchedule;
-        record.date = today;
+        record.date = today.toJSDate();
 
         const attendance: typeof record.attendance = [];
 
@@ -128,7 +127,7 @@ export class AttendanceRecordResolver
         weekScheduleID: string,
         notAssistedIDs: string[]
     ): Promise<AttendanceRecord> {
-        const today = dateWithoutTime(new Date());
+        const today = dateWithoutTime(DateTime.local());
 
         const record = await AttendanceRecord.findOne({
             where: { weekSchedule: { id: weekScheduleID }, date: today },

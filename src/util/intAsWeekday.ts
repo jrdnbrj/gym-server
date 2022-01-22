@@ -2,8 +2,6 @@ import { Weekday } from "../enum/Weekday";
 
 const intAsWeekday = (dayInt: number): Weekday => {
     switch (dayInt) {
-        case 0:
-            return Weekday.Sunday;
         case 1:
             return Weekday.Monday;
         case 2:
@@ -16,6 +14,8 @@ const intAsWeekday = (dayInt: number): Weekday => {
             return Weekday.Friday;
         case 6:
             return Weekday.Saturday;
+        case 7:
+            return Weekday.Sunday;
         default:
             throw new Error("Invalid int for Weekday.");
     }
