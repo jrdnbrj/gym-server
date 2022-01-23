@@ -19,12 +19,17 @@ import { HealthRecordCreateArgs } from "./args_type/HealthRecordResolver.args";
 export class HealthRecordResolver implements ResolverInterface<HealthRecord> {
     @FieldResolver()
     async _clientField(@Root() hr: HealthRecord) {
-        return await hr.client;
+        return await (
+            await hr.client
+        ).user;
     }
 
     @FieldResolver()
     async _takenByField(@Root() hr: HealthRecord) {
-        return await hr.takenBy;
+        const instructor = await hr.takenBy;
+        if (!instructor) return null;
+
+        return await instructor.user;
     }
 
     // Queries and mutations

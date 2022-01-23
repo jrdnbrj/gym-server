@@ -9,6 +9,7 @@ import {
 } from "typeorm";
 import { Client } from "./Client";
 import { Instructor } from "./Instructor";
+import { User } from "./User";
 
 @ObjectType()
 @Entity()
@@ -24,14 +25,14 @@ export class HealthRecord extends BaseEntity {
     @ManyToOne(() => Instructor, { onDelete: "SET NULL" })
     takenBy!: Promise<Instructor | null>;
 
-    @Field(() => Instructor, { name: "takenBy", nullable: true })
-    _takenByField!: Instructor | null;
+    @Field(() => User, { name: "takenBy", nullable: true })
+    _takenByField!: User | null;
 
     @ManyToOne(() => Client, { onDelete: "CASCADE" })
     client!: Promise<Client>;
 
-    @Field(() => Client, { name: "client" })
-    _clientField!: Client;
+    @Field(() => User, { name: "client" })
+    _clientField!: User;
 
     // Data
     /**Weight in kilograms.*/
