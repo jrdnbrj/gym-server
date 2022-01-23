@@ -12,3 +12,6 @@ export class ClientHasPaidForWeekScheduleArgs {
     @Field({ nullable: true })
     monthDate?: Date;
 }
+
+@ArgsType()
+export class ClientReceiptFromArgs extends ClientHasPaidForWeekScheduleArgs {}

@@ -17,12 +17,16 @@ import { ApolloError } from "apollo-server-core";
 import { RegularContext } from "../types/RegularContext";
 import { WeekSchedule } from "../entity/WeekSchedule";
 import RequireClient from "../gql_middleware/RequireClient";
-import { ClientHasPaidForWeekScheduleArgs } from "./args_type/ClientResolver.args";
+import {
+    ClientHasPaidForWeekScheduleArgs,
+    ClientReceiptFromArgs,
+} from "./args_type/ClientResolver.args";
 import { userDoesNotExistError } from "../error/userDoesNotExistError";
 import { DateTime } from "luxon";
 import { userIsNotClientError } from "../error/userIsNotRole";
 import { HealthRecord } from "../entity/HealthRecord";
 import { getClientByIDOrFail } from "../util/getUserByIDOrFail";
+import { Receipt } from "../entity/Receipt";
 
 declare module "express-session" {
     interface SessionData {
@@ -126,5 +130,17 @@ export class ClientResolver implements ResolverInterface<Client> {
         const datetime = monthDate ? DateTime.fromJSDate(monthDate) : undefined;
 
         return await client.hasPaidFor(weekScheduleID, datetime);
+    }
+
+    @Query(() => Receipt, { nullable: true })
+    async clientReceiptFrom(
+        @Args()
+        { weekScheduleID, clientID, monthDate }: ClientReceiptFromArgs
+    ): Promise<Receipt | null> {
+        const [, client] = await getClientByIDOrFail(clientID);
+
+        const datetime = monthDate ? DateTime.fromJSDate(monthDate) : undefined;
+
+        return await client.receiptFrom(weekScheduleID, datetime);
     }
 }
