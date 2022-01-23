@@ -22,6 +22,7 @@ import { userDoesNotExistError } from "../error/userDoesNotExistError";
 import { DateTime } from "luxon";
 import { userIsNotClientError } from "../error/userIsNotRole";
 import { HealthRecord } from "../entity/HealthRecord";
+import { getClientByIDOrFail } from "../util/getUserByIDOrFail";
 
 declare module "express-session" {
     interface SessionData {
@@ -120,11 +121,7 @@ export class ClientResolver implements ResolverInterface<Client> {
             monthDate,
         }: ClientHasPaidForWeekScheduleArgs
     ): Promise<boolean> {
-        const clientUser = await User.findOne(clientID);
-        if (!clientUser) throw userDoesNotExistError;
-
-        const client = await clientUser.client;
-        if (!client) throw userIsNotClientError;
+        const [, client] = await getClientByIDOrFail(clientID);
 
         const datetime = monthDate ? DateTime.fromJSDate(monthDate) : undefined;
 
