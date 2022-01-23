@@ -21,6 +21,7 @@ import { ClientHasPaidForWeekScheduleArgs } from "./args_type/ClientResolver.arg
 import { userDoesNotExistError } from "../error/userDoesNotExistError";
 import { DateTime } from "luxon";
 import { userIsNotClientError } from "../error/userIsNotRole";
+import { HealthRecord } from "../entity/HealthRecord";
 
 declare module "express-session" {
     interface SessionData {
@@ -34,6 +35,13 @@ export class ClientResolver implements ResolverInterface<Client> {
     async _weekSchedulesField(@Root() client: Client) {
         return await client.weekSchedules;
     }
+
+    @FieldResolver()
+    async _healthRecordsField(@Root() client: Client) {
+        return await client.healthRecords;
+    }
+
+    // Queries and mutations
 
     @Mutation(() => User)
     async clientRegister(

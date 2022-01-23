@@ -28,7 +28,7 @@ export class HealthRecord extends BaseEntity {
     @Field(() => User, { name: "takenBy", nullable: true })
     _takenByField!: User | null;
 
-    @ManyToOne(() => Client, { onDelete: "CASCADE" })
+    @ManyToOne(() => Client, (c) => c.healthRecords, { onDelete: "CASCADE" })
     client!: Promise<Client>;
 
     @Field(() => User, { name: "client" })

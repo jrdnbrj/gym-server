@@ -60,6 +60,8 @@ export class UserResolver implements ResolverInterface<User> {
         return await user.admin;
     }
 
+    // Queries and mutations
+
     @Query(() => User, { nullable: true })
     async userByID(
         @Arg("userID", () => ID) userID: string
