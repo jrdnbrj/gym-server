@@ -6,6 +6,7 @@ import {
     UseMiddleware,
     ID,
     Args,
+    Ctx,
 } from "type-graphql";
 import { User } from "../entity/User";
 import RequireAdmin from "../gql_middleware/RequireAdmin";
@@ -20,6 +21,8 @@ import { userIsNotClientError } from "../error/userIsNotRole";
 import { ApolloError } from "apollo-server-core";
 import { WeekSchedule } from "../entity/WeekSchedule";
 import { weekScheduleNotFoundError } from "./WeekScheduleResolver";
+import sendEmail from "../util/sendEmail";
+import { RegularContext } from "../types/RegularContext";
 
 export const clientAlreadyPaidForWSError = new ApolloError(
     "El cliente ya ha pagado la mensualidad de la clase."
@@ -149,5 +152,25 @@ export class AdminResolver {
         }).save();
 
         return (await Receipt.findOne(receipt.id))!;
+    }
+
+    @Mutation(() => Boolean)
+    @UseMiddleware(RequireAdmin)
+    async adminSendEmailAllUsers(
+        @Arg("subject") subject: string,
+        @Arg("text") text: string,
+        @Ctx() { transporter }: RegularContext
+    ): Promise<boolean> {
+        const users = await User.find();
+
+        for (const user of users) {
+            await sendEmail(transporter, {
+                to: user.email,
+                subject,
+                html: `<p>${text}</p>`,
+            });
+        }
+
+        return true;
     }
 }
