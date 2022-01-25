@@ -1,7 +1,8 @@
 import { Client } from "../entity/Client";
+import {Instructor} from "../entity/Instructor";
 import { User } from "../entity/User";
 import { userDoesNotExistError } from "../error/userDoesNotExistError";
-import { userIsNotClientError } from "../error/userIsNotRole";
+import { userIsNotClientError, userIsNotInstructorError } from "../error/userIsNotRole";
 
 /**Finds a user given an ID and throws an error if none is found.*/
 export const getUserByIDOrFail = async (userID: string): Promise<User> => {
@@ -21,4 +22,16 @@ export const getClientByIDOrFail = async (
     if (!client) throw userIsNotClientError;
 
     return [user, client];
+};
+
+/**Finds a user given an ID and throws an error if no user is found or if the found user is not an instructor..*/
+export const getInstructorByIDOrFail = async (
+    clientID: string
+): Promise<[User, Instructor]> => {
+    const user = await getUserByIDOrFail(clientID);
+    const instructor = await user.instructor;
+
+    if (!instructor) throw userIsNotInstructorError;
+
+    return [user, instructor];
 };

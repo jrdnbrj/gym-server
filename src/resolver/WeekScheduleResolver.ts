@@ -24,6 +24,7 @@ import {
     WeekScheduleEditArgs,
 } from "./args_type/WeekScheduleResolver.args";
 import { workoutTypeNotFoundError } from "./WorkoutTypeResolver";
+import {getInstructorByIDOrFail} from "../util/getUserByIDOrFail";
 
 export const weekScheduleHasStudentsError = new ApolloError(
     "Clase tiene estudiantes asignados."
@@ -188,6 +189,7 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
             price,
             startDate,
             workoutTypeName,
+            instructorID
         }: WeekScheduleEditArgs
     ): Promise<WeekSchedule> {
         const ws = await WeekSchedule.findOne(weekScheduleID);
@@ -210,11 +212,19 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
             ws.startDate = startDate;
         }
 
+        // Validate workoutType
         if (workoutTypeName) {
             const wt = await WorkoutType.findOne({ name: workoutTypeName });
             if (!wt) throw workoutTypeNotFoundError;
 
             ws.workoutType = Promise.resolve(wt);
+        }
+
+        // Validate instructor
+        if (instructorID) {
+            const [, instructor] = await getInstructorByIDOrFail(instructorID);
+
+            ws.instructor = Promise.resolve(instructor);
         }
 
         return await ws.save();

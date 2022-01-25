@@ -21,10 +21,7 @@ import {
     ClientHasPaidForWeekScheduleArgs,
     ClientReceiptFromArgs,
 } from "./args_type/ClientResolver.args";
-import { userDoesNotExistError } from "../error/userDoesNotExistError";
 import { DateTime } from "luxon";
-import { userIsNotClientError } from "../error/userIsNotRole";
-import { HealthRecord } from "../entity/HealthRecord";
 import { getClientByIDOrFail } from "../util/getUserByIDOrFail";
 import { Receipt } from "../entity/Receipt";
 

@@ -28,4 +28,7 @@ export class WeekScheduleEditArgs {
 
     @Field({ nullable: true })
     startDate?: Date;
+
+    @Field(() => ID, { nullable: true })
+    instructorID?: string;
 }
