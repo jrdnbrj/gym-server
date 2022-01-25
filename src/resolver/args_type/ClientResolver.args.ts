@@ -14,4 +14,14 @@ export class ClientHasPaidForWeekScheduleArgs {
 }
 
 @ArgsType()
-export class ClientReceiptFromArgs extends ClientHasPaidForWeekScheduleArgs {}
+export class ClientReceiptFromArgs {
+    @Field(() => ID, { nullable: true })
+    weekScheduleID?: string;
+
+    @Field(() => ID)
+    clientID!: string;
+
+    /**Used to filter the result for a given month.*/
+    @Field({ nullable: true })
+    monthDate?: Date;
+}

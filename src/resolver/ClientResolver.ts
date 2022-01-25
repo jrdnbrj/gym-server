@@ -132,15 +132,15 @@ export class ClientResolver implements ResolverInterface<Client> {
         return await client.hasPaidFor(weekScheduleID, datetime);
     }
 
-    @Query(() => Receipt, { nullable: true })
-    async clientReceiptFrom(
+    @Query(() => [Receipt])
+    async clientReceiptsFrom(
         @Args()
         { weekScheduleID, clientID, monthDate }: ClientReceiptFromArgs
-    ): Promise<Receipt | null> {
+    ): Promise<Receipt[]> {
         const [, client] = await getClientByIDOrFail(clientID);
 
         const datetime = monthDate ? DateTime.fromJSDate(monthDate) : undefined;
 
-        return await client.receiptFrom(weekScheduleID, datetime);
+        return await client.receiptsFrom(weekScheduleID, datetime);
     }
 }

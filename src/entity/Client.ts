@@ -1,6 +1,7 @@
 import {
     BaseEntity,
     Entity,
+    FindConditions,
     ManyToMany,
     OneToMany,
     OneToOne,
@@ -36,16 +37,21 @@ export class Client extends BaseEntity {
 
     // Methods
     /**Checks if client has already paid for a given weekSchedule in a given month and year and returns the corresponding receipt (null otherwise). If `monthDate` is undefined, it defaults to current month.*/
-    async receiptFrom(
-        weekScheduleID: string,
+    async receiptsFrom(
+        weekScheduleID?: string,
         monthDate?: DateTime
-    ): Promise<Receipt | null> {
-        if (!monthDate) monthDate = DateTime.local();
+    ): Promise<Receipt[]> {
+        const filters: FindConditions<Receipt> = {clientID: (await this.user).id};
+        if (weekScheduleID) filters.weekScheduleID = weekScheduleID;
 
         // Find receipts with same weekScheduleID and clientID.
-        let receipts = await Receipt.find({
-            where: { weekScheduleID, clientID: (await this.user).id },
+        const receipts = await Receipt.find({
+            where: filters,
         });
+
+        if (!monthDate) return receipts;
+
+        const filteredReceipts: Receipt[] = []
 
         // Find if any receipt has a payment for the given month.
         for (const r of receipts) {
@@ -57,12 +63,14 @@ export class Client extends BaseEntity {
                 if (
                     date.month == monthDate.month &&
                     date.year == monthDate.year
-                )
-                    return r;
+                ) {
+                    filteredReceipts.push(r);
+                    break;
+                }
             }
         }
 
-        return null;
+        return filteredReceipts;
     }
 
     /**Checks if client has already paid for a given weekSchedule in a given month and year. If `monthDate` is undefined, it defaults to current month.*/
@@ -70,6 +78,8 @@ export class Client extends BaseEntity {
         weekScheduleID: string,
         monthDate?: DateTime
     ): Promise<boolean> {
-        return !!(await this.receiptFrom(weekScheduleID, monthDate));
+        if (!monthDate) monthDate = DateTime.local();
+
+        return (await this.receiptsFrom(weekScheduleID, monthDate)).length > 0;
     }
 }
