@@ -105,7 +105,7 @@ const main = async () => {
         app,
         cors: {
             credentials: true,
-            origin: "*", // "http://localhost:3000", // TODO: Client url as env variable.
+            origin: "http://localhost:3000", // TODO: Client url as env variable.
         },
     });
 
