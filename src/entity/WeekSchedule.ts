@@ -23,7 +23,7 @@ export class WeekSchedule extends BaseEntity {
 
     /**Price per month.*/
     @Field()
-    @Column({ nullable: false })
+    @Column("decimal", { nullable: false })
     price!: number;
 
     @ManyToOne(() => WorkoutType, { onDelete: "RESTRICT" })
