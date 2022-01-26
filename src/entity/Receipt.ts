@@ -46,7 +46,7 @@ export class Receipt extends BaseEntity {
     paidForMonthsDates!: Date[];
 
     /**Total amount of the transaction, in dollars.*/
-    @Column()
+    @Column("decimal")
     @Field()
     totalAmount!: number;
 }
