@@ -77,12 +77,12 @@ export class AttendanceRecordResolver
         const today = dateWithoutTime(DateTime.local());
         const todayWeekday = intAsWeekday(today.weekday);
 
-        if (
-            today.toMillis() <
-            DateTime.fromJSDate(weekSchedule.startDate).toMillis()
-        ) {
-            throw new ApolloError("WeekSchedule hasn't started yet.");
-        }
+        // if (
+        //     today.toMillis() <
+        //     DateTime.fromJSDate(weekSchedule.startDate).toMillis()
+        // ) {
+        //     throw new ApolloError("WeekSchedule hasn't started yet.");
+        // }
 
         if (weekSchedule.days.indexOf(todayWeekday) < 0) {
             throw new ApolloError(
