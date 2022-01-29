@@ -17,7 +17,6 @@ import { userDoesNotExistError } from "../error/userDoesNotExistError";
 import { Receipt } from "../entity/Receipt";
 import { AdminSubmitPaymentArgs } from "./args_type/AdminResolver.args";
 import { DateTime } from "luxon";
-import { userIsNotClientError } from "../error/userIsNotRole";
 import { ApolloError } from "apollo-server-core";
 import { WeekSchedule } from "../entity/WeekSchedule";
 import { weekScheduleNotFoundError } from "./WeekScheduleResolver";
@@ -104,11 +103,11 @@ export class AdminResolver {
     }
 
     /**Creates a receipt for a client's monthly reservation. It allows to pay in advance.*/
-    @Mutation(() => Receipt)
+    @Mutation(() => [Receipt])
     @UseMiddleware(RequireAdmin)
     async adminSubmitPayment(
         @Args() { weekScheduleID, clientID, months }: AdminSubmitPaymentArgs
-    ): Promise<Receipt> {
+    ): Promise<Receipt[]> {
         if (!months) months = 1;
 
         // Get client
@@ -131,7 +130,7 @@ export class AdminResolver {
             monthDates.push(DateTime.local().plus({ months: i }));
         }
 
-        // Check if client already has paid for thoso months
+        // Check if client already has paid for those months
         for (const md of monthDates) {
             if (await client.hasPaidFor(weekScheduleID, md)) {
                 throw clientAlreadyPaidForWSError;
@@ -139,17 +138,23 @@ export class AdminResolver {
         }
 
         // Generate receipt
-        const receipt = await Receipt.create({
-            totalAmount: weekSchedule.price * months,
-            clientID: clientID,
-            clientFullName: clientUser.fullName(),
-            clientEmail: clientUser.email,
-            weekScheduleID,
-            workoutTypeName: (await weekSchedule.workoutType).name,
-            paidForMonthsDates: monthDates.map((d) => d.toJSDate()),
-        }).save();
+        const receipts: Receipt[] = [];
 
-        return (await Receipt.findOne(receipt.id))!;
+        for (const md of monthDates) {
+            const receipt = await Receipt.create({
+                totalAmount: weekSchedule.price,
+                clientID: clientID,
+                clientFullName: clientUser.fullName(),
+                clientEmail: clientUser.email,
+                weekScheduleID,
+                workoutTypeName: (await weekSchedule.workoutType).name,
+                paidForMonthsDates: [md.toJSDate()],
+            }).save();
+
+            receipts.push((await Receipt.findOne(receipt.id))!);
+        }
+
+        return receipts;
     }
 
     @Mutation(() => Boolean)

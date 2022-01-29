@@ -96,7 +96,7 @@ export class User extends BaseEntity {
 
     // Methods
     fullName(): string {
-        return this.firstName + this.lastName;
+        return this.firstName + " " + this.lastName;
     }
 
     // Getters and setters
