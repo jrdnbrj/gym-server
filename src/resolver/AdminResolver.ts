@@ -23,6 +23,7 @@ import { WeekSchedule } from "../entity/WeekSchedule";
 import { weekScheduleNotFoundError } from "./WeekScheduleResolver";
 import sendEmail from "../util/sendEmail";
 import { RegularContext } from "../types/RegularContext";
+import {getClientByIDOrFail} from "../util/getUserByIDOrFail";
 
 export const clientAlreadyPaidForWSError = new ApolloError(
     "El cliente ya ha pagado la mensualidad de la clase."
@@ -111,11 +112,7 @@ export class AdminResolver {
         if (!months) months = 1;
 
         // Get client
-        const clientUser = await User.findOne(clientID);
-        if (!clientUser) throw userDoesNotExistError;
-
-        const client = await clientUser.client;
-        if (!client) throw userIsNotClientError;
+        const [clientUser, client] = await getClientByIDOrFail(clientID);
 
         // Get weekSchedule
         const weekSchedule = await WeekSchedule.findOne(weekScheduleID);
@@ -143,8 +140,9 @@ export class AdminResolver {
 
         // Generate receipt
         const receipt = await Receipt.create({
-            clientID: clientID,
             totalAmount: weekSchedule.price * months,
+            clientID: clientID,
+            clientFullName: clientUser.fullName(),
             clientEmail: clientUser.email,
             weekScheduleID,
             workoutTypeName: (await weekSchedule.workoutType).name,

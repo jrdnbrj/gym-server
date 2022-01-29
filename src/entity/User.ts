@@ -94,6 +94,11 @@ export class User extends BaseEntity {
     @Field(() => Admin, { name: "admin", nullable: true })
     _adminField!: Admin | null;
 
+    // Methods
+    fullName(): string {
+        return this.firstName + this.lastName;
+    }
+
     // Getters and setters
 
     /**Returns the user's hased password.*/

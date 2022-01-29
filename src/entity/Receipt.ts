@@ -18,6 +18,10 @@ export class Receipt extends BaseEntity {
     @Field()
     transactionDate!: Date;
 
+    @Column()
+    @Field()
+    clientFullName!: string;
+
     /**Corresponds to the client's userID at the moment of the transaction. Thus, it is not guaranteed the user still exists when reading the receipt.*/
     @Column("uuid")
     @Field(() => ID)
