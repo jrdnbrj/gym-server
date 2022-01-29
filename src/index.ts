@@ -55,7 +55,7 @@ const main = async () => {
                 httpOnly: __prod__,
                 sameSite: "none",
             },
-            store: new (FileStore(session))(),
+            store: __prod__? new (FileStore(session))() : undefined,
             proxy: __prod__
         })
     );
@@ -92,7 +92,7 @@ const main = async () => {
         app,
         cors: {
             credentials: true,
-            origin: "http://localhost:3000", // TODO: Client url as env variable.
+            origin: ["http://localhost:3000", "https://studio.apollographql.com"], // TODO: Client url as env variable.
         },
     });
 
