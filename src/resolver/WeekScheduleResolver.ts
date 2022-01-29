@@ -34,6 +34,10 @@ export const weekScheduleNotFoundError = new ApolloError(
     "Clase no encontrada."
 );
 
+export const invalidQuotasError = new ApolloError(
+    "No se puede reducir el número de cupos a un número menor del de estudiantes."
+);
+
 @Resolver(() => WeekSchedule)
 export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
     @FieldResolver()
@@ -189,7 +193,8 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
             price,
             startDate,
             workoutTypeName,
-            instructorID
+            instructorID,
+            quotas
         }: WeekScheduleEditArgs
     ): Promise<WeekSchedule> {
         const ws = await WeekSchedule.findOne(weekScheduleID);
@@ -197,7 +202,14 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
 
         // Modify
         if (days) ws.days = days;
-        if (price) ws.price = price;
+        if (price !== undefined) ws.price = price;
+
+        if (quotas !== undefined) {
+            if (quotas < (await ws.students).length)
+                throw invalidQuotasError;
+
+            ws.quotas = quotas;
+        }
 
         // Validate startDate
         if (startDate) {

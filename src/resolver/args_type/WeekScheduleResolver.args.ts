@@ -1,5 +1,5 @@
 import { Min } from "class-validator";
-import { ArgsType, Field, ID } from "type-graphql";
+import { ArgsType, Field, ID, Int } from "type-graphql";
 import { Weekday } from "../../enum/Weekday";
 
 @ArgsType()
@@ -31,4 +31,9 @@ export class WeekScheduleEditArgs {
 
     @Field(() => ID, { nullable: true })
     instructorID?: string;
+
+    @Field(() => Int, { nullable: true })
+    @Min(0)
+    quotas?: number;
+
 }
