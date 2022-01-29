@@ -2,23 +2,20 @@ import "reflect-metadata";
 import { createConnection } from "typeorm";
 import connectionOptions from "../ormconfig";
 import { ApolloServer, ApolloServerExpressConfig } from "apollo-server-express";
-import * as express from "express";
-import {
-    ApolloServerPluginLandingPageGraphQLPlayground,
-    ApolloServerPluginLandingPageDisabled,
-} from "apollo-server-core";
+import express from "express";
 import {
     __prod__,
     SESSION_SECRET,
     SMTP_HOST,
     SMTP_USER,
     SMTP_PASSWORD,
+    PORT
 } from "./constants";
-import * as session from "express-session";
-import cookieParser = require("cookie-parser");
+import session from "express-session";
 import { RegularContext } from "./types/RegularContext";
 import { buildGqlSchema } from "./util/buildGqlSchema";
 import * as nodemailer from "nodemailer";
+import FileStore from "session-file-store";
 
 declare module "express-session" {
     interface SessionData {
@@ -44,11 +41,8 @@ const main = async () => {
     });
 
     const app = express();
-    const PORT = 8000;
 
     // Express middleware
-    app.use(cookieParser());
-
     const oneDayMs = 1000 * 60 * 60 * 24;
     app.use(
         session({
@@ -59,8 +53,10 @@ const main = async () => {
                 maxAge: oneDayMs,
                 secure: __prod__,
                 httpOnly: __prod__,
-                sameSite: "lax",
+                sameSite: "none",
             },
+            store: new (FileStore(session))(),
+            proxy: __prod__
         })
     );
 
@@ -71,15 +67,6 @@ const main = async () => {
     // Apollo 3.
     const apolloServerConfig: ApolloServerExpressConfig = {
         schema,
-        plugins: [
-            __prod__
-                ? ApolloServerPluginLandingPageDisabled()
-                : ApolloServerPluginLandingPageGraphQLPlayground({
-                      settings: {
-                          "request.credentials": "include",
-                      },
-                  }),
-        ],
         context: ({ req, res }): RegularContext => ({
             req,
             res,

@@ -13,6 +13,8 @@
         "@types/node": "^16.11.9",
         "@types/nodemailer": "^6.4.4",
         "@types/npm": "^7.19.0",
+        "@types/session-file-store": "^1.2.2",
+        "@types/validator": "^13.7.1",
         "faker": "5.5.3",
         "jest": "^27.4.5",
         "nodemon": "^2.0.15",
@@ -35,16 +37,19 @@
         "nodemailer": "^6.7.2",
         "pg": "^8.7.1",
         "reflect-metadata": "^0.1.10",
+        "session-file-store": "^1.5.0",
         "type-graphql": "^1.1.1",
         "typeorm": "0.2.41"
     },
     "scripts": {
-        "start": "ts-node src/index.ts",
+        "start": "node dist/src/index.js",
+        "dev-start": "ts-node src/index.ts",
         "dev": "nodemon -L src/index.ts",
         "typeorm": "node --require ts-node/register ./node_modules/typeorm/cli.js",
         "ts-jest": "ts-jest",
         "test-setup": "ts-node test/testSetup.ts",
         "test-teardown": "ts-node test/testTeardown.ts",
-        "test": "yarn test-setup && jest"
+        "test": "yarn test-setup && jest",
+        "build": "tsc"
     }
 }
