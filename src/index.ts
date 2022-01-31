@@ -53,10 +53,10 @@ const main = async () => {
                 maxAge: oneDayMs,
                 secure: __prod__,
                 httpOnly: __prod__,
-                sameSite: "none",
+                sameSite: __prod__ ? "none" : "lax",
             },
             store: __prod__? new (FileStore(session))() : undefined,
-            proxy: __prod__
+            proxy: true
         })
     );
 
