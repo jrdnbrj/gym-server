@@ -208,7 +208,7 @@ export class WeekScheduleResolver implements ResolverInterface<WeekSchedule> {
             if (quotas < (await ws.students).length)
                 throw invalidQuotasError;
 
-            ws.quotas = quotas;
+            ws.quotas = quotas - (await ws.students).length;
         }
 
         // Validate startDate
