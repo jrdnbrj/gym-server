@@ -16,6 +16,7 @@ import { RegularContext } from "./types/RegularContext";
 import { buildGqlSchema } from "./util/buildGqlSchema";
 import * as nodemailer from "nodemailer";
 import FileStore from "session-file-store";
+import { ApolloServerPluginLandingPageGraphQLPlayground, ApolloServerPluginLandingPageProductionDefault } from "apollo-server-core";
 
 declare module "express-session" {
     interface SessionData {
@@ -83,6 +84,11 @@ const main = async () => {
         validationRules: undefined,
         executor: undefined,
         allowBatchedHttpRequests: undefined,
+        plugins: [
+            __prod__
+            ? ApolloServerPluginLandingPageProductionDefault()
+            : ApolloServerPluginLandingPageGraphQLPlayground()
+        ]
     };
 
     const apolloServer = new ApolloServer(apolloServerConfig);
